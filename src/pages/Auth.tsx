@@ -3,36 +3,105 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { AuthError } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const handleAuthError = (error: AuthError) => {
+    console.error("Auth error:", error);
+    
+    switch (error.message) {
+      case "Invalid login credentials":
+        toast.error("Credenciais inválidas. Verifique seu email e senha.");
+        break;
+      case "User already registered":
+        toast.error("Este email já está cadastrado. Tente fazer login.");
+        break;
+      case "Password should be at least 6 characters":
+        toast.error("A senha deve ter pelo menos 6 caracteres.");
+        break;
+      case "Unable to validate email address: invalid format":
+        toast.error("Formato de email inválido.");
+        break;
+      default:
+        toast.error(error.message || "Ocorreu um erro. Tente novamente.");
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      toast.success("Login realizado com sucesso!");
-      navigate("/dashboard");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        handleAuthError(error);
+      } else {
+        toast.success("Login realizado com sucesso!");
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Ocorreu um erro inesperado.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate registration
-    setTimeout(() => {
-      toast.success("Conta criada com sucesso!");
-      navigate("/dashboard");
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName
+          }
+        }
+      });
+
+      if (error) {
+        handleAuthError(error);
+      } else {
+        toast.success("Conta criada com sucesso! Verifique seu email para confirmar a conta.");
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Register error:", error);
+      toast.error("Ocorreu um erro inesperado.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -71,6 +140,8 @@ const Auth = () => {
                       id="email"
                       type="email"
                       placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
@@ -80,6 +151,8 @@ const Auth = () => {
                       id="password"
                       type="password"
                       placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                   </div>
@@ -101,6 +174,8 @@ const Auth = () => {
                       id="name"
                       type="text"
                       placeholder="Seu nome"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       required
                     />
                   </div>
@@ -110,6 +185,8 @@ const Auth = () => {
                       id="register-email"
                       type="email"
                       placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
@@ -119,6 +196,8 @@ const Auth = () => {
                       id="register-password"
                       type="password"
                       placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                   </div>
