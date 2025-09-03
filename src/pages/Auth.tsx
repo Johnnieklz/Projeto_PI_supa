@@ -21,7 +21,7 @@ const Auth = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        navigate("/");
       }
     };
     checkAuth();
@@ -62,7 +62,7 @@ const Auth = () => {
         handleAuthError(error);
       } else {
         toast.success("Login realizado com sucesso!");
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -94,7 +94,7 @@ const Auth = () => {
         handleAuthError(error);
       } else {
         toast.success("Conta criada com sucesso! Verifique seu email para confirmar a conta.");
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (error) {
       console.error("Register error:", error);
