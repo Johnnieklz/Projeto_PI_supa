@@ -1,12 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, User, Menu, X } from "lucide-react";
+import { Search, User, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -60,15 +71,54 @@ const Header = () => {
             <Search className="h-4 w-4" />
           </Button>
           
-          <Button
-            onClick={() => navigate('/auth')}
-            variant="outline"
-            size="sm"
-            className="hidden md:inline-flex"
-          >
-            <User className="mr-2 h-4 w-4" />
-            Entrar
-          </Button>
+          {user ? (
+            <div className="hidden md:flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {profile?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {profile?.full_name || 'Usuário'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <Button
+              onClick={() => navigate('/auth')}
+              variant="outline"
+              size="sm"
+              className="hidden md:inline-flex"
+            >
+              <User className="mr-2 h-4 w-4" />
+              Entrar
+            </Button>
+          )}
 
           <Button
             variant="ghost"
@@ -106,18 +156,52 @@ const Header = () => {
             >
               Criar Serviço
             </Link>
-            <Button
-              onClick={() => {
-                navigate('/auth');
-                setIsMenuOpen(false);
-              }}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <User className="mr-2 h-4 w-4" />
-              Entrar
-            </Button>
+
+            {user ? (
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {profile?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {profile?.full_name || 'Usuário'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    signOut();
+                    setIsMenuOpen(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => {
+                  navigate('/auth');
+                  setIsMenuOpen(false);
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Entrar
+              </Button>
+            )}
           </div>
         </div>
       )}
