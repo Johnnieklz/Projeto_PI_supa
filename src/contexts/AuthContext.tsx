@@ -80,15 +80,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
           // Buscar perfil do usuário quando ele faz login
-          const userProfile = await fetchProfile(session.user.id);
-          setProfile(userProfile);
+          setTimeout(() => {
+            fetchProfile(session.user.id).then(setProfile);
+          }, 0);
         } else {
           setProfile(null);
         }
@@ -103,7 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile);
+        fetchProfile(session.user.id).then(setProfile).catch(console.error);
       }
       
       setLoading(false);

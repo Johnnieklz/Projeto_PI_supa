@@ -35,20 +35,24 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name,
           avatar_url: formData.avatar_url,
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .single();
 
       if (error) {
         console.error('Erro ao atualizar perfil:', error);
         toast.error('Erro ao salvar as alterações');
       } else {
         toast.success('Perfil atualizado com sucesso!');
+        // Força uma atualização do contexto
+        window.location.reload();
       }
     } catch (error) {
       console.error('Erro inesperado:', error);

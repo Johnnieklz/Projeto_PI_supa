@@ -9,6 +9,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const categories = [
   "Design",
@@ -24,19 +26,93 @@ const categories = [
 
 const CreateService = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("Você precisa estar logado para criar um serviço");
+      return;
+    }
+
     setIsLoading(true);
     
-    // Simulate service creation
-    setTimeout(() => {
+    try {
+      const formData = new FormData(e.target as HTMLFormElement);
+      
+      // Extrair dados do formulário
+      const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      const category = formData.get('category') as string;
+      const price = parseFloat(formData.get('price') as string);
+      const deliveryTime = formData.get('delivery-time') as string;
+      const requirements = formData.get('requirements') as string;
+      const extras = formData.get('extras') as string;
+
+      // Converter delivery time para dias
+      const deliveryDays = convertDeliveryTimeToDays(deliveryTime);
+
+      // Criar o serviço
+      const { data: service, error: serviceError } = await (supabase as any)
+        .from('services')
+        .insert({
+          user_id: user.id,
+          title,
+          description,
+          category,
+          price,
+          delivery_days: deliveryDays,
+          requirements: requirements || null,
+          extras: extras || null,
+        })
+        .select()
+        .single();
+
+      if (serviceError) {
+        console.error('Erro ao criar serviço:', serviceError);
+        toast.error('Erro ao criar serviço');
+        return;
+      }
+
+      // Criar imagens se houver
+      if (images.length > 0 && service?.id) {
+        const imageInserts = images.map(url => ({
+          service_id: service.id,
+          url
+        }));
+
+        const { error: imagesError } = await (supabase as any)
+          .from('service_images')
+          .insert(imageInserts);
+
+        if (imagesError) {
+          console.error('Erro ao salvar imagens:', imagesError);
+          // Não bloquear a criação do serviço por causa das imagens
+        }
+      }
+
       toast.success("Serviço criado com sucesso!");
       navigate("/dashboard");
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast.error('Erro inesperado ao criar serviço');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
+  };
+
+  const convertDeliveryTimeToDays = (deliveryTime: string): number => {
+    switch (deliveryTime) {
+      case '1-day': return 1;
+      case '2-3-days': return 3;
+      case '3-5-days': return 5;
+      case '1-week': return 7;
+      case '2-weeks': return 14;
+      case '1-month': return 30;
+      default: return 7;
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +160,7 @@ const CreateService = () => {
                     <Label htmlFor="title">Título do Serviço *</Label>
                     <Input
                       id="title"
+                      name="title"
                       placeholder="Ex: Design de Logo Profissional"
                       required
                     />
@@ -91,7 +168,7 @@ const CreateService = () => {
 
                   <div>
                     <Label htmlFor="category">Categoria *</Label>
-                    <Select required>
+                    <Select name="category" required>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
@@ -109,6 +186,7 @@ const CreateService = () => {
                     <Label htmlFor="description">Descrição *</Label>
                     <Textarea
                       id="description"
+                      name="description"
                       placeholder="Descreva detalhadamente o que você oferece..."
                       rows={4}
                       required
@@ -122,6 +200,7 @@ const CreateService = () => {
                     <Label htmlFor="price">Preço (R$) *</Label>
                     <Input
                       id="price"
+                      name="price"
                       type="number"
                       min="0"
                       step="0.01"
@@ -132,7 +211,7 @@ const CreateService = () => {
                   
                   <div>
                     <Label htmlFor="delivery-time">Tempo de Entrega *</Label>
-                    <Select required>
+                    <Select name="delivery-time" required>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o prazo" />
                       </SelectTrigger>
@@ -206,6 +285,7 @@ const CreateService = () => {
                     <Label htmlFor="requirements">Requisitos do Cliente</Label>
                     <Textarea
                       id="requirements"
+                      name="requirements"
                       placeholder="O que você precisa do cliente para começar o trabalho?"
                       rows={3}
                     />
@@ -215,6 +295,7 @@ const CreateService = () => {
                     <Label htmlFor="extras">Extras Disponíveis</Label>
                     <Textarea
                       id="extras"
+                      name="extras"
                       placeholder="Serviços adicionais que você pode oferecer..."
                       rows={3}
                     />
