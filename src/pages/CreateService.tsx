@@ -94,6 +94,10 @@ const CreateService = () => {
       }
 
       toast.success("Serviço criado com sucesso!");
+      
+      // Atualizar listas se necessário
+      window.dispatchEvent(new Event('serviceCreated'));
+      
       navigate("/dashboard");
     } catch (error) {
       console.error('Erro inesperado:', error);

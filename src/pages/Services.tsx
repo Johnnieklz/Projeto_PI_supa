@@ -7,6 +7,7 @@ import { Search, Star, MapPin, Clock, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Mock data for services
 const services = [
@@ -71,12 +72,18 @@ const Services = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [realServices, setRealServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const SERVICES_PER_PAGE = 8;
 
   // Carregar serviços reais do banco
-  const loadServices = async () => {
+  const loadServices = async (pageNum = 1, append = false) => {
     try {
-      setLoading(true);
-      const { data, error } = await (supabase as any)
+      if (pageNum === 1) setLoading(true);
+      
+      const startIndex = (pageNum - 1) * SERVICES_PER_PAGE;
+      
+      const { data, error, count } = await supabase
         .from('services')
         .select(`
           id,
@@ -86,23 +93,43 @@ const Services = () => {
           price,
           delivery_days,
           created_at,
-          profiles!user_id (
+          user_id,
+          profiles!services_user_id_fkey (
             full_name
           )
-        `)
+        `, { count: 'exact' })
         .eq('active', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(startIndex, startIndex + SERVICES_PER_PAGE - 1);
 
       if (error) {
         console.error('Erro ao carregar serviços:', error);
+        toast.error('Erro ao carregar serviços');
       } else {
-        setRealServices(data || []);
+        const newServices = data || [];
+        
+        if (append) {
+          setRealServices(prev => [...prev, ...newServices]);
+        } else {
+          setRealServices(newServices);
+        }
+        
+        // Verificar se há mais serviços
+        const totalLoaded = append ? realServices.length + newServices.length : newServices.length;
+        setHasMore(totalLoaded < (count || 0));
       }
     } catch (error) {
       console.error('Erro inesperado:', error);
+      toast.error('Erro inesperado ao carregar serviços');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMoreServices = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadServices(nextPage, true);
   };
 
   useEffect(() => {
@@ -242,11 +269,18 @@ const Services = () => {
         )}
 
         {/* Load More */}
-        <div className="text-center mt-12">
-          <Button variant="outline" size="lg" className="hover:shadow-elegant">
-            Carregar Mais Serviços
-          </Button>
-        </div>
+        {hasMore && !loading && (
+          <div className="text-center mt-12">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="hover:shadow-elegant"
+              onClick={loadMoreServices}
+            >
+              Carregar Mais Serviços
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   );

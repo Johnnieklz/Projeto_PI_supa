@@ -11,6 +11,7 @@ import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import Dashboard from "./pages/Dashboard";
 import CreateService from "./pages/CreateService";
+import EditService from "./pages/EditService";
 import Profile from "./pages/Profile";
 import ContractDetail from "./pages/ContractDetail";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,11 @@ const App = () => (
             <Route path="/services/new" element={
               <ProtectedRoute>
                 <CreateService />
+              </ProtectedRoute>
+            } />
+            <Route path="/services/edit/:id" element={
+              <ProtectedRoute>
+                <EditService />
               </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
