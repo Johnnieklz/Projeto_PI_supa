@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import { Search, Star, MapPin, Clock, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for services
 const services = [
@@ -65,6 +67,63 @@ const services = [
 const categories = ["Todos", "Design", "Tecnologia", "Marketing", "Idiomas", "Consultoria"];
 
 const Services = () => {
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [realServices, setRealServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Carregar serviços reais do banco
+  const loadServices = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await (supabase as any)
+        .from('services')
+        .select(`
+          id,
+          title,
+          description,
+          category,
+          price,
+          delivery_days,
+          created_at,
+          profiles!user_id (
+            full_name
+          )
+        `)
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar serviços:', error);
+      } else {
+        setRealServices(data || []);
+      }
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadServices();
+  }, []);
+
+  // Filtrar serviços baseado na categoria e busca
+  const filteredServices = [...services, ...realServices.map(service => ({
+    ...service,
+    rating: 5.0,
+    reviews: 0,
+    provider: service.profiles?.full_name || "Usuário",
+    location: "Brasil",
+    deliveryTime: `${service.delivery_days} dias`,
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop"
+  }))].filter(service => {
+    const matchesCategory = selectedCategory === "Todos" || service.category === selectedCategory;
+    const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         service.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -86,6 +145,8 @@ const Services = () => {
               <Input
                 placeholder="Pesquisar serviços..."
                 className="pl-10 h-12 text-lg shadow-elegant"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
@@ -95,8 +156,9 @@ const Services = () => {
             {categories.map((category) => (
               <Button
                 key={category}
-                variant={category === "Todos" ? "default" : "outline"}
-                className={category === "Todos" ? "gradient-primary shadow-glow" : ""}
+                variant={selectedCategory === category ? "default" : "outline"}
+                className={selectedCategory === category ? "gradient-primary shadow-glow" : ""}
+                onClick={() => setSelectedCategory(category)}
               >
                 {category}
               </Button>
@@ -115,8 +177,18 @@ const Services = () => {
         </div>
 
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {services.map((service) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Carregando serviços...</p>
+          </div>
+        ) : filteredServices.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nenhum serviço encontrado.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredServices.map((service) => (
             <Link key={service.id} to={`/services/${service.id}`}>
               <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 shadow-card">
                 <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-t-lg overflow-hidden">
@@ -165,8 +237,9 @@ const Services = () => {
                 </CardContent>
               </Card>
             </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Load More */}
         <div className="text-center mt-12">

@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          id: number
+          name: string
+        }
+        Insert: {
+          id?: number
+          name: string
+        }
+        Update: {
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -35,6 +50,80 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      service_images: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_images_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          active: boolean | null
+          category: string
+          created_at: string
+          delivery_days: number
+          description: string
+          extras: string | null
+          id: string
+          price: number
+          requirements: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          created_at?: string
+          delivery_days: number
+          description: string
+          extras?: string | null
+          id?: string
+          price: number
+          requirements?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          created_at?: string
+          delivery_days?: number
+          description?: string
+          extras?: string | null
+          id?: string
+          price?: number
+          requirements?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

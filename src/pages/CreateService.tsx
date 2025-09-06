@@ -55,13 +55,13 @@ const CreateService = () => {
       const deliveryDays = convertDeliveryTimeToDays(deliveryTime);
 
       // Criar o serviço
-      const { data: service, error: serviceError } = await (supabase as any)
+      const { data: service, error: serviceError } = await supabase
         .from('services')
         .insert({
           user_id: user.id,
           title,
           description,
-          category,
+          category: category.toLowerCase(),
           price,
           delivery_days: deliveryDays,
           requirements: requirements || null,
@@ -83,7 +83,7 @@ const CreateService = () => {
           url
         }));
 
-        const { error: imagesError } = await (supabase as any)
+        const { error: imagesError } = await supabase
           .from('service_images')
           .insert(imageInserts);
 
