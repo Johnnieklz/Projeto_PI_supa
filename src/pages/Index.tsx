@@ -239,7 +239,7 @@ const Index = () => {
               </Button>
             </Link>
             <Link to="/services">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
+              <Button size="lg" variant="secondary" className="hover:shadow-elegant">
                 Explorar Agora
               </Button>
             </Link>

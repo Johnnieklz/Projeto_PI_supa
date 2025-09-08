@@ -15,6 +15,8 @@ import EditService from "./pages/EditService";
 import Profile from "./pages/Profile";
 import ContractDetail from "./pages/ContractDetail";
 import NotFound from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/services" element={<Services />} />
             <Route path="/services/:id" element={<ServiceDetail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/services/new" element={
               <ProtectedRoute>
                 <CreateService />

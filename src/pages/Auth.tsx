@@ -48,6 +48,8 @@ const Auth = () => {
     }
   };
 
+  
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -155,6 +157,11 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
+                    <p className="text-right text-sm">
+                      <Link to="/forgot-password" className="text-primary hover:underline">
+                        Esqueceu a senha?
+                      </Link>
+                    </p>
                   </div>
                   <Button 
                     type="submit" 
@@ -199,7 +206,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                    />
+                    />                    
                   </div>
                   <Button 
                     type="submit" 
@@ -214,6 +221,7 @@ const Auth = () => {
           </CardContent>
         </Card>
 
+        
         <p className="text-center text-sm text-muted-foreground mt-6">
           <Link to="/" className="text-primary hover:underline">
             ← Voltar para o início
