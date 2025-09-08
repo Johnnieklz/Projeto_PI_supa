@@ -98,7 +98,7 @@ const Index = () => {
                   </Button>
                 </Link>
                 <Link to="/services/new">
-                  <Button size="lg" variant="outline" className="hover:shadow-elegant">
+                 <Button size="lg" className="gradient-primary shadow-glow animate-pulse-glow hover:shadow-elegant">
                     Começar a Vender
                   </Button>
                 </Link>

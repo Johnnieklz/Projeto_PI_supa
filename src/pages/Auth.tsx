@@ -220,7 +220,6 @@ const Auth = () => {
             </Tabs>
           </CardContent>
         </Card>
-
         
         <p className="text-center text-sm text-muted-foreground mt-6">
           <Link to="/" className="text-primary hover:underline">
