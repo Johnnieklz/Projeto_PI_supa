@@ -100,6 +100,7 @@ const Index = () => {
                 <Link to="/services/new">
                  <Button size="lg" className="gradient-primary shadow-glow animate-pulse-glow hover:shadow-elegant">
                     Começar a Vender
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               </div>

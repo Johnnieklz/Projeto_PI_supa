@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -195,4 +196,10 @@ All colors MUST be HSL.
       box-shadow: 0 0 40px hsl(262 90% 50% / 0.8);
     }
   }
+
+  @keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
 }
