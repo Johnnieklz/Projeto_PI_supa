@@ -28,12 +28,25 @@ const App = () => {
 
   // Inicializa VLibras
   useEffect(() => {
-    const vlibrasScript = document.createElement("script");
-    vlibrasScript.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
-    vlibrasScript.onload = () => {
-      new (window as any).VLIBRAS.Widget("body");
+    const initVLibras = () => {
+      if (!(window as any).VLIBRAS) {
+        const vlibrasScript = document.createElement("script");
+        vlibrasScript.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
+        vlibrasScript.onload = () => {
+          new (window as any).VLIBRAS.Widget("body");
+        };
+        document.body.appendChild(vlibrasScript);
+      } else {
+        new (window as any).VLIBRAS.Widget("body");
+      }
     };
-    document.body.appendChild(vlibrasScript);
+
+    // Aguarda um pouco para garantir que o DOM esteja pronto
+    const timer = setTimeout(() => {
+      initVLibras();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
