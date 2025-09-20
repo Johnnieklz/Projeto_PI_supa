@@ -1,3 +1,13 @@
-import { useToast, toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
-export { useToast, toast };
+export const toast = {
+  success: (msg: string) => {
+    // implementação
+  },
+  error: (msg: string) => {
+    // implementação
+  },
+  // outros métodos...
+};
+
+export { useToast };
