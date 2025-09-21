@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Star, Users, Shield, Zap, Search, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-image.jpg";
+import Sharemenu from "@/components/ui/sharemenu";
+
 
 const Index = () => {
   const featuredServices = [
@@ -186,9 +188,13 @@ const Index = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant="secondary">{service.category}</Badge>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-                        {service.rating}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+                          {service.rating}
+                        </div>
+                        {/* botão de compartilhar */}
+                        <Sharemenu service={service} />
                       </div>
                     </div>
                     <CardTitle className="group-hover:text-primary transition-colors">

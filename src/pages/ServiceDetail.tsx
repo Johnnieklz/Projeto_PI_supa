@@ -7,6 +7,7 @@ import { useParams, Link } from "react-router-dom";
 import { Star, Clock, MapPin, Shield, MessageCircle, Heart, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import Sharemenu from "@/components/ui/sharemenu";
 
 // Mock service data
 const service = {
@@ -161,10 +162,17 @@ const ServiceDetail = () => {
                     >
                       <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
                     </Button>
-                    <Button size="sm" variant="outline">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+
+                    {/* Botão de compartilhar funcional */}
+                    <Sharemenu
+                      service={{
+                        id: service.id,
+                        title: service.title,
+                        description: service.description
+                      }}
+                    />
                   </div>
+
                 </div>
               </CardHeader>
               <CardContent>

@@ -9,7 +9,7 @@ import { useParams } from "react-router-dom";
 import { Calendar, Clock, MessageCircle, Star, CheckCircle2, AlertCircle, Upload, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import Sharemenu from "@/components/ui/sharemenu";
 // Mock contract data
 const contract = {
   id: "1",
@@ -143,6 +143,14 @@ const ContractDetail = () => {
                     <div className="flex items-center space-x-2 mb-2">
                       <Badge variant="secondary">{contract.service.category}</Badge>
                       <Badge variant={getStatusColor(contract.status)}>{contract.status}</Badge>
+                      {/* botão de compartilhar */}
+                      <Sharemenu
+                        service={{
+                          id: contract.id,
+                          title: contract.service.title,
+                          description: contract.description
+                        }}
+                      />
                     </div>
                     <CardTitle className="text-2xl">{contract.service.title}</CardTitle>
                     <CardDescription className="mt-2">
@@ -158,6 +166,7 @@ const ContractDetail = () => {
                     </div>
                   </div>
                 </div>
+                
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
