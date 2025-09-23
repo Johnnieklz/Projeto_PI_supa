@@ -19,8 +19,8 @@ import {
   Share2,
 } from "lucide-react";
 import { useState } from "react";
-import { ShareService } from "@/components/ui/share-service";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import Sharemenu from "@/components/ui/sharemenu";
 
 // Mock service data
 const service = {
@@ -199,12 +199,11 @@ const ServiceDetail = () => {
                         }`}
                       />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowShare(!showShare)}
-                    >
-                      <Share2 className="h-4 w-4" />
+                    
+                    <Button size="sm" variant="outline">
+                      <Sharemenu service={service} />
+                    </Button>
+
                     </Button>
                   </div>
                   {showShare && (

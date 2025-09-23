@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Plus, Eye, Edit, Trash2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import Sharemenu from "@/components/ui/sharemenu"; // 👈 importa o Sharemenu
+
 
 const UserServices = ({ services, loading, handleDeleteService }: any) => (
   <Card>
@@ -18,6 +20,7 @@ const UserServices = ({ services, loading, handleDeleteService }: any) => (
         </div>
       ) : services.length === 0 ? (
         <div className="text-center py-8">
+              <CardDescription>Gerencie seus serviços disponíveis</CardDescription>
           <p className="text-muted-foreground mb-4">Você ainda não criou nenhum serviço.</p>
           <Link to="/services/new">
             <Button className="gradient-primary">
@@ -68,6 +71,13 @@ const UserServices = ({ services, loading, handleDeleteService }: any) => (
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
+                  <Sharemenu
+                    service={{
+                      id: service.id,
+                      title: service.title,
+                      description: service.description,
+                    }}
+                  />
                 </div>
               </div>
             </div>

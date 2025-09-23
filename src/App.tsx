@@ -26,27 +26,87 @@ const queryClient = new QueryClient();
 
 const App = () => {
 
-  // Inicializa VLibras
+  // VLibras accessibility widget - implementação robusta
   useEffect(() => {
-    const initVLibras = () => {
-      if (!(window as any).VLIBRAS) {
-        const vlibrasScript = document.createElement("script");
-        vlibrasScript.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
-        vlibrasScript.onload = () => {
-          new (window as any).VLIBRAS.Widget("body");
-        };
-        document.body.appendChild(vlibrasScript);
-      } else {
-        new (window as any).VLIBRAS.Widget("body");
+    let script: HTMLScriptElement | null = null;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const initializeVLibras = () => {
+      try {
+        if ((window as any).VLibras) {
+          console.log('VLibras: Inicializando widget...');
+          new (window as any).VLibras.Widget('https://vlibras.gov.br/app', {
+            // Configurações do widget
+            position: 'right',
+            avatar: 'random',
+            opacity: 0.8,
+            width: 220,
+            height: 160
+          });
+          console.log('VLibras: Widget inicializado com sucesso!');
+        } else {
+          throw new Error('VLibras não está disponível');
+        }
+      } catch (error) {
+        console.error('VLibras: Erro na inicialização:', error);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`VLibras: Tentativa ${retryCount}/${maxRetries}...`);
+          setTimeout(initializeVLibras, 2000);
+        }
       }
     };
 
-    // Aguarda um pouco para garantir que o DOM esteja pronto
-    const timer = setTimeout(() => {
-      initVLibras();
-    }, 1000);
+    const loadVLibras = () => {
+      // Verificar se já existe o script para evitar duplicação
+      const existingScript = document.querySelector('script[src*="vlibras-plugin.js"]');
+      if (existingScript) {
+        console.log('VLibras: Script já carregado, inicializando...');
+        setTimeout(initializeVLibras, 1000);
+        return;
+      }
 
-    return () => clearTimeout(timer);
+      script = document.createElement('script');
+      script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        console.log('VLibras: Script carregado com sucesso');
+        // Aguardar um momento para garantir que o VLibras esteja completamente carregado
+        setTimeout(initializeVLibras, 1000);
+      };
+      
+      script.onerror = (error) => {
+        console.error('VLibras: Erro ao carregar script:', error);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`VLibras: Recarregando script - tentativa ${retryCount}/${maxRetries}...`);
+          setTimeout(loadVLibras, 3000);
+        } else {
+          console.warn('VLibras: Falha ao carregar após múltiplas tentativas. Funcionalidade não disponível.');
+        }
+      };
+      
+      document.head.appendChild(script);
+    };
+
+    // Verificar se o documento já está carregado
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadVLibras);
+    } else {
+      // DOM já está pronto
+      setTimeout(loadVLibras, 500);
+    }
+
+    return () => {
+      // Cleanup
+      if (script && script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+      document.removeEventListener('DOMContentLoaded', loadVLibras);
+    };
   }, []);
 
   return (
