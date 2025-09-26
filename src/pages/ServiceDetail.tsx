@@ -252,9 +252,9 @@ const ServiceDetail = () => {
                   variant="outline" 
                   className="w-full"
                   onClick={handleContact}
-                >
-                  Conversar
-                </Button>
+                  >
+                    Conversar
+                 </Button>
                 </Link>
 
               </CardContent>
