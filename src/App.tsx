@@ -21,6 +21,7 @@ const ContractDetail = React.lazy(() => import("./pages/ContractDetail"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
+const Chat = React.lazy(() => import("./pages/Chat"));
 
 const queryClient = new QueryClient();
 
@@ -122,6 +123,7 @@ const App = () => {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/services/:id" element={<ServiceDetail />} />
+                <Route path="/chat" element={<Chat />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/services/new" element={

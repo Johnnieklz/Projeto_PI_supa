@@ -246,14 +246,17 @@ const ServiceDetail = () => {
                 >
                   Fazer Pedido
                 </Button>
-                <Button 
+                
+                <Link to="/chat">
+                  <Button 
                   variant="outline" 
                   className="w-full"
                   onClick={handleContact}
                 >
-                  <MessageCircle className="mr-2 h-4 w-4" />
                   Conversar
                 </Button>
+                </Link>
+
               </CardContent>
             </Card>
 
