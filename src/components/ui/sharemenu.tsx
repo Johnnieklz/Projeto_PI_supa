@@ -29,6 +29,8 @@ export default function Sharemenu({ service }: ShareMenuProps) {
 
   const copyLink = async () => {
     try {
+      const url = window.location.href;
+
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         toast.success("✅ Link copiado para a área de transferência!");
@@ -41,7 +43,7 @@ export default function Sharemenu({ service }: ShareMenuProps) {
       }
     } catch (err) {
       console.error("Erro ao copiar link:", err);
-      const fallback = window.prompt("⚠️ Não foi possível copiar. Copie manualmente:", url);
+      const fallback = window.prompt("⚠️ Não foi possível copiar. Copie manualmente:", window.location.href);
       if (fallback !== null) {
         toast.error("Falha ao copiar automaticamente, use o link manual.");
       }
