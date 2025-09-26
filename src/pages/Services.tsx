@@ -259,7 +259,7 @@ const Services = () => {
                     </span>
                     <div className="flex gap-2">
                       <Sharemenu service={service} /> 
-                      <Button size="sm" className="gradient-primary">
+                      <Button size= "flexbutton" className="gradient-primary">
                         Ver Detalhes
                       </Button>
                     </div>
