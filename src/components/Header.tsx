@@ -63,13 +63,15 @@ const Header = () => {
 
         {/* Right side */}
         <div className="flex items-center space-x-4">
-          <Button
+          {/* Eu comentei esta parte porque a lupa estava sem função nenhuma */}
+          
+          {/* <Button
             variant="ghost"
             size="icon"
             className="hidden md:inline-flex"
           >
             <Search className="h-4 w-4" />
-          </Button>
+          </Button> */}
           
           {user ? (
             <div className="hidden md:flex items-center space-x-2">
