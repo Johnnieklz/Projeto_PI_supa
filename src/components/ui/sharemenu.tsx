@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface ShareMenuProps {
   service: {
@@ -30,15 +31,23 @@ export default function Sharemenu({ service }: ShareMenuProps) {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
-        alert("Link copiado!");
+        toast.success("✅ Link copiado para a área de transferência!");
       } else {
-        window.prompt("Copie o link abaixo:", url);
+        // Prompt moderno e enxuto
+        const linkPrompt = window.prompt("📎 Copie o link abaixo:", url);
+        if (linkPrompt !== null) {
+          toast.info("Link disponível para cópia manual.");
+        }
       }
     } catch (err) {
       console.error("Erro ao copiar link:", err);
-      window.prompt("Copie o link abaixo:", url);
+      const fallback = window.prompt("⚠️ Não foi possível copiar. Copie manualmente:", url);
+      if (fallback !== null) {
+        toast.error("Falha ao copiar automaticamente, use o link manual.");
+      }
     }
   };
+
 
   return (
     <DropdownMenu>
