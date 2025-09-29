@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,32 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   const navigate = useNavigate();
+
+  // Verificar se há um token válido na URL
+  useEffect(() => {
+    const checkToken = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setTokenValid(true);
+      } else {
+        // Verificar se há parâmetros de hash na URL (token de reset)
+        const hashParams = new URLSearchParams(window.location.hash.substr(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+        
+        if (accessToken && type === 'recovery') {
+          setTokenValid(true);
+        } else {
+          setTokenValid(false);
+          toast.error("Link de recuperação inválido ou expirado. Solicite um novo link.");
+        }
+      }
+    };
+    
+    checkToken();
+  }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,14 +56,59 @@ const ResetPassword = () => {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      toast.error(error.message);
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Token de recuperação inválido ou expirado. Solicite um novo link.");
+      } else if (error.message.includes("Password should be at least 6 characters")) {
+        toast.error("A senha deve ter pelo menos 6 caracteres.");
+      } else {
+        toast.error(`Erro ao alterar senha: ${error.message}`);
+      }
     } else {
       toast.success("Senha alterada com sucesso!");
-      navigate("/"); // redireciona para login
+      navigate("/auth"); // redireciona para página de login
     }
 
     setLoading(false);
   };
+
+  // Mostrar loading enquanto verifica o token
+  if (tokenValid === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verificando link de recuperação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar erro se token inválido
+  if (tokenValid === false) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="shadow-elegant border-primary/20 border rounded-2xl bg-background p-6">
+            <h1 className="text-2xl font-bold mb-4 text-destructive">Link Inválido</h1>
+            <p className="text-muted-foreground mb-6">
+              O link de recuperação de senha é inválido ou expirou. Solicite um novo link.
+            </p>
+            <Link 
+              to="/forgot-password" 
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background gradient-primary shadow-glow h-10 px-4 py-2 w-full"
+            >
+              Solicitar Novo Link
+            </Link>
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              <Link to="/auth" className="text-primary hover:underline">
+                ← Voltar para o login
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
