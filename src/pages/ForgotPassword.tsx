@@ -15,7 +15,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://projeto-pi-supa.vercel.app/reset-password`
+      redirectTo: `${window.location.origin}/reset-password`
     });
 
     if (error) {

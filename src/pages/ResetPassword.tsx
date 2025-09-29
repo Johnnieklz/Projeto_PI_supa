@@ -13,28 +13,56 @@ const ResetPassword = () => {
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   const navigate = useNavigate();
 
-  // Verificar se há um token válido na URL
+  // Verificar se há um token válido na URL e processar diferentes fluxos de autenticação
   useEffect(() => {
-    const checkToken = async () => {
+    const setup = async () => {
+      // 1) Se vier com "code" na URL (fluxo PKCE), troca por sessão
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        if (error) {
+          setTokenValid(false);
+          toast.error("Link inválido ou expirado. Solicite um novo.");
+          return;
+        }
+        setTokenValid(true);
+        // Limpa a URL
+        window.history.replaceState({}, document.title, '/reset-password');
+        return;
+      }
+
+      // 2) Tenta pegar sessão (caso implicit via hash já tenha sido processado)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setTokenValid(true);
-      } else {
-        // Verificar se há parâmetros de hash na URL (token de reset)
-        const hashParams = new URLSearchParams(window.location.hash.substr(1));
-        const accessToken = hashParams.get('access_token');
-        const type = hashParams.get('type');
-        
-        if (accessToken && type === 'recovery') {
-          setTokenValid(true);
-        } else {
-          setTokenValid(false);
-          toast.error("Link de recuperação inválido ou expirado. Solicite um novo link.");
-        }
+        return;
       }
+
+      // 3) Verifica hash implicit (access_token + type=recovery)
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+
+      if (accessToken && type === 'recovery') {
+        setTokenValid(true);
+        return;
+      }
+
+      setTokenValid(false);
+      toast.error("Link de recuperação inválido ou expirado. Solicite um novo.");
     };
-    
-    checkToken();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
+        setTokenValid(true);
+      }
+    });
+
+    setup();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
