@@ -9,6 +9,8 @@ import { useParams } from "react-router-dom";
 import { Calendar, Clock, MessageCircle, Star, CheckCircle2, AlertCircle, Upload, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import Sharemenu from "@/components/ui/sharemenu";
+
 
 // Mock contract data
 const contract = {
@@ -156,6 +158,13 @@ const ContractDetail = () => {
                     <div className="text-sm text-muted-foreground">
                       {daysRemaining > 0 ? `${daysRemaining} dias restantes` : "Prazo vencido"}
                     </div>
+                    <Sharemenu
+                      service={{
+                        id: contract.id, 
+                        title: contract.service.title,
+                        description: contract.description,
+                      }}
+                    />
                   </div>
                 </div>
               </CardHeader>
