@@ -25,26 +25,28 @@ const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const queryClient = new QueryClient();
 
 const App = () => {
-
   // Inicializa VLibras
   useEffect(() => {
     const initVLibras = () => {
-      if (!(window as any).VLIBRAS) {
-        const vlibrasScript = document.createElement("script");
-        vlibrasScript.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
-        vlibrasScript.onload = () => {
-          new (window as any).VLIBRAS.Widget("body");
-        };
-        document.body.appendChild(vlibrasScript);
+      if (window.VLibras) {
+        // Se já existe, inicializa
+        new window.VLibras.Widget("body");
       } else {
-        new (window as any).VLIBRAS.Widget("body");
+        // Cria o script e inicializa quando carregar
+        const script = document.createElement("script");
+        script.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
+        script.async = true;
+        script.onload = () => {
+          if (window.VLibras) {
+            new window.VLibras.Widget("body");
+          }
+        };
+        document.body.appendChild(script);
       }
     };
 
-    // Aguarda um pouco para garantir que o DOM esteja pronto
-    const timer = setTimeout(() => {
-      initVLibras();
-    }, 1000);
+    // Opcional: pequeno delay para garantir que o DOM esteja pronto
+    const timer = setTimeout(initVLibras, 500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -64,31 +66,46 @@ const App = () => {
                 <Route path="/services/:id" element={<ServiceDetail />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/services/new" element={
-                  <ProtectedRoute>
-                    <CreateService />
-                  </ProtectedRoute>
-                } />
-                <Route path="/services/edit/:id" element={
-                  <ProtectedRoute>
-                    <EditService />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/contracts/:id" element={
-                  <ProtectedRoute>
-                    <ContractDetail />
-                  </ProtectedRoute>
-                } />
+                <Route
+                  path="/services/new"
+                  element={
+                    <ProtectedRoute>
+                      <CreateService />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/services/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <EditService />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/contracts/:id"
+                  element={
+                    <ProtectedRoute>
+                      <ContractDetail />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
@@ -100,3 +117,8 @@ const App = () => {
 };
 
 export default App;
+
+<div
+  className="fixed bottom-6 right-6 z-[9999]"
+  aria-label="VLibras"
+></div>;
