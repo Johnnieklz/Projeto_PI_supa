@@ -18,9 +18,10 @@ import {
   MessageCircle,
   Heart,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast as sonnerToast } from "sonner";
 import Sharemenu from "@/components/ui/sharemenu";
+import { addFavorite, removeFavorite, getFavoriteIdsByUser } from "@/lib/favorites";
 
 // Mock service data
 const service = {
@@ -109,6 +110,21 @@ const ServiceDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserAndFavorites = async () => {
+      // Resgata o User do Supabase
+      const user = (await import("@/integrations/supabase/client").then(mod => mod.supabase.auth.getUser())).data.user;
+      if (!user) return;
+      setUserId(user.id);
+
+      // Verifica se já está como Favorito
+      const favoriteIds = await getFavoriteIdsByUser(user.id);
+      setIsFavorite(favoriteIds.includes(service.id));
+    };
+    fetchUserAndFavorites();
+  }, []);
 
   const handleOrder = () => {
     toast({
@@ -124,13 +140,18 @@ const ServiceDetail = () => {
     });
   };
 
-  const toggleFavorite = () => {
-    setIsFavorite((prev) => !prev);
-    toast({
-      title: isFavorite
-        ? "Removido dos favoritos"
-        : "Adicionado aos favoritos",
-    });
+  const toggleFavorite = async () => {
+    if (!userId) return;
+
+    if (isFavorite) {
+      await removeFavorite(userId, service.id);
+      toast.success("Removido dos favoritos");
+    } else {
+      await addFavorite(userId, service.id);
+      toast.success("Adicionado aos favoritos");
+    }
+
+    setIsFavorite(!isFavorite);
   };
 
   return (
