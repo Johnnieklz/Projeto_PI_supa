@@ -15,21 +15,19 @@ interface ShareMenuProps {
     title: string;
     description?: string;
   };
-}
+} 
 
 export default function Sharemenu({ service }: ShareMenuProps) {
   const [url, setUrl] = React.useState("");
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined"  && service?.id) {
       setUrl(`${window.location.origin}/services/${service.id}`);
     }
   }, [service.id]);
 
   const copyLink = async () => {
     try {
-      const url = window.location.href;
-
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         toast.success("✅ Link copiado para a área de transferência!");
@@ -48,7 +46,6 @@ export default function Sharemenu({ service }: ShareMenuProps) {
       }
     }
   };
-
 
   return (
     <DropdownMenu>
