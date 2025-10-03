@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import Sharemenu from "@/components/ui/sharemenu"; //criado para importar sharemenu 
 
 // Mock data for services
 const services = [
@@ -251,16 +252,19 @@ const Services = () => {
                       <Clock className="h-3 w-3 mr-1" />
                       Entrega em {service.deliveryTime}
                     </div>
-                  </div>
-                  
+                  </div>      
                   <div className="flex items-center justify-between mt-4 pt-4 border-t">
                     <span className="text-lg font-bold text-primary">
                       R$ {service.price.toLocaleString()}
                     </span>
-                    <Button size="sm" className="gradient-primary">
-                      Ver Detalhes
-                    </Button>
+                    <div className="flex gap-2">
+                      <Sharemenu service={service} /> 
+                      <Button size="sm" className="gradient-primary">
+                        Ver Detalhes
+                      </Button>
+                    </div>
                   </div>
+
                 </CardContent>
               </Card>
             </Link>
