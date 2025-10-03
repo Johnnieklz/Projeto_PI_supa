@@ -21,10 +21,17 @@ export default function Sharemenu({ service }: ShareMenuProps) {
   const [url, setUrl] = React.useState("");
 
   React.useEffect(() => {
-    if (typeof window !== "undefined"  && service?.id) {
+  if (typeof window !== "undefined") {
+    if (window.location.pathname.startsWith("/services/")) {
+      // já estou dentro de /services/:id → uso a URL atual
+      setUrl(window.location.href);
+    } else if (service?.id) {
+      // estou na listagem → gero o link para o detalhe
       setUrl(`${window.location.origin}/services/${service.id}`);
     }
-  }, [service.id]);
+  }
+}, [service?.id]);
+
 
   const copyLink = async () => {
     try {
