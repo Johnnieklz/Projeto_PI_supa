@@ -72,6 +72,7 @@ const Dashboard = () => {
           <TabsList>
             <TabsTrigger value="services">Meus Serviços</TabsTrigger>
             <TabsTrigger value="contracts">Contratos</TabsTrigger>
+            <TabsTrigger value="favorites">Favoritos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="services">
