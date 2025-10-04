@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Link } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Header from "@/components/Header";
@@ -338,14 +339,17 @@ const ServiceDetail = () => {
                 >
                   Fazer Pedido
                 </Button>
-                <Button
-                  variant="outline"
+                
+                <Link to="/chat">
+                  <Button 
+                  variant="outline" 
                   className="w-full"
                   onClick={handleContact}
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Conversar
-                </Button>
+                  >
+                    Conversar
+                 </Button>
+                </Link>
+
               </CardContent>
             </Card>
 
