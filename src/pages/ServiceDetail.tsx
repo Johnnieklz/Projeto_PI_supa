@@ -145,10 +145,10 @@ const ServiceDetail = () => {
 
     if (isFavorite) {
       await removeFavorite(userId, service.id);
-      toast.success("Removido dos favoritos");
+      toast({ title: "Removido dos favoritos" });
     } else {
       await addFavorite(userId, service.id);
-      toast.success("Adicionado aos favoritos");
+      toast({ title: "Adicionado aos favoritos" });
     }
 
     setIsFavorite(!isFavorite);
