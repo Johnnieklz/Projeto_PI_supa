@@ -220,9 +220,7 @@ const ServiceDetail = () => {
                       />
                     </Button>
 
-                    <Button size="icon" variant="outline">
-                      <Sharemenu service={service} />
-                    </Button>
+                    <Sharemenu service={service} />
                   </div>
                 </div>
               </CardHeader>
