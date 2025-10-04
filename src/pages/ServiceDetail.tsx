@@ -1,3 +1,4 @@
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -5,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Link } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Header from "@/components/Header";
@@ -16,10 +18,9 @@ import {
   Shield,
   MessageCircle,
   Heart,
-  Share2,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 import Sharemenu from "@/components/ui/sharemenu";
 
 // Mock service data
@@ -108,7 +109,6 @@ const ServiceDetail = () => {
   const { id } = useParams();
   const [currentImage, setCurrentImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showShare, setShowShare] = useState(false);
   const { toast } = useToast();
 
   const handleOrder = () => {
@@ -126,9 +126,11 @@ const ServiceDetail = () => {
   };
 
   const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    setIsFavorite((prev) => !prev);
     toast({
-      title: isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos",
+      title: isFavorite
+        ? "Removido dos favoritos"
+        : "Adicionado aos favoritos",
     });
   };
 
@@ -194,24 +196,14 @@ const ServiceDetail = () => {
                       className={isFavorite ? "text-red-500" : ""}
                     >
                       <Heart
-                        className={`h-4 w-4 ${
-                          isFavorite ? "fill-current" : ""
-                        }`}
+                        className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
                       />
                     </Button>
-                    
-                    <Button size="sm" variant="outline">
+
+                    <Button size="icon" variant="outline">
                       <Sharemenu service={service} />
                     </Button>
-
-                    </Button>
                   </div>
-                  {showShare && (
-                    <ShareService
-                      url={window.location.href}
-                      title={service.title}
-                    />
-                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -254,14 +246,12 @@ const ServiceDetail = () => {
                           <h4 className="font-semibold">{review.user}</h4>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <div className="flex items-center mr-2">
-                              {Array.from({ length: review.rating }).map(
-                                (_, i) => (
-                                  <Star
-                                    key={i}
-                                    className="h-3 w-3 fill-yellow-400 text-yellow-400"
-                                  />
-                                )
-                              )}
+                              {Array.from({ length: review.rating }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className="h-3 w-3 fill-yellow-400 text-yellow-400"
+                                />
+                              ))}
                             </div>
                             {new Date(review.date).toLocaleDateString()}
                           </div>
@@ -300,14 +290,17 @@ const ServiceDetail = () => {
                 >
                   Fazer Pedido
                 </Button>
-                <Button
-                  variant="outline"
+                
+                <Link to="/chat">
+                  <Button 
+                  variant="outline" 
                   className="w-full"
                   onClick={handleContact}
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Conversar
-                </Button>
+                  >
+                    Conversar
+                 </Button>
+                </Link>
+
               </CardContent>
             </Card>
 
@@ -340,14 +333,11 @@ const ServiceDetail = () => {
                     <span className="text-muted-foreground">Avaliação:</span>
                     <div className="flex items-center">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-                      {service.provider.rating} ({service.provider.totalReviews}
-                      )
+                      {service.provider.rating} ({service.provider.totalReviews})
                     </div>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Tempo de resposta:
-                    </span>
+                    <span className="text-muted-foreground">Tempo de resposta:</span>
                     <span>{service.provider.responseTime}</span>
                   </div>
                   <div className="flex justify-between">
