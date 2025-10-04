@@ -129,6 +129,24 @@ const ServiceDetail = () => {
     fetchUserAndFavorites();
   }, [actualServiceId]);
 
+  useEffect(() => {
+    let unsub: { unsubscribe: () => void } | null = null;
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const uid = session?.user?.id ?? null;
+        setUserId(uid);
+        if (uid && actualServiceId) {
+          getFavoriteIdsByUser(uid)
+            .then(ids => setIsFavorite(ids.includes(actualServiceId)))
+            .catch(() => {});
+        }
+      });
+      unsub = subscription;
+    })();
+    return () => unsub?.unsubscribe();
+  }, [actualServiceId]);
+
   const handleOrder = () => {
     toast({
       title: "Pedido iniciado!",
@@ -144,7 +162,14 @@ const ServiceDetail = () => {
   };
 
   const toggleFavorite = async () => {
-    if (!userId || !actualServiceId) return;
+    if (!userId) {
+      toast({ title: "Faça login para favoritar" });
+      return;
+    }
+    if (!actualServiceId) {
+      toast({ title: "Favoritar disponível apenas para serviços publicados" });
+      return;
+    }
 
     if (isFavorite) {
       await removeFavorite(userId, actualServiceId);
@@ -217,6 +242,7 @@ const ServiceDetail = () => {
                       variant="outline"
                       onClick={toggleFavorite}
                       disabled={!userId || !actualServiceId}
+                      title={!userId ? "Faça login para favoritar" : !actualServiceId ? "Disponível apenas para serviços publicados" : isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                       className={isFavorite ? "text-red-500" : ""}
                     >
                       <Heart
