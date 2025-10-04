@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Upload, User, Save, LogOut } from "lucide-react";
+import { Upload, User, Save, LogOut, Heart } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { getFavoriteServicesByUser } from "@/lib/favorites";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const Profile = () => {
     full_name: "",
     avatar_url: ""
   });
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFav, setLoadingFav] = useState(true);
 
   useEffect(() => {
     if (profile) {
@@ -28,6 +31,22 @@ const Profile = () => {
       });
     }
   }, [profile]);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (!user) return;
+      setLoadingFav(true);
+      try {
+        const services = await getFavoriteServicesByUser(user.id);
+        setFavorites(services || []);
+      } catch (e) {
+        console.error('Erro ao carregar favoritos', e);
+      } finally {
+        setLoadingFav(false);
+      }
+    };
+    loadFavorites();
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,6 +183,32 @@ const Profile = () => {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+
+          {/* Favorites Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Heart className="mr-2 h-5 w-5" /> Meus Favoritos
+              </CardTitle>
+              <CardDescription>Serviços que você marcou como favorito</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingFav ? (
+                <p className="text-muted-foreground">Carregando favoritos...</p>
+              ) : favorites.length === 0 ? (
+                <p className="text-muted-foreground">Você ainda não tem favoritos.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {favorites.map((srv) => (
+                    <Link key={srv.id} to={`/services/${srv.id}`} className="block p-3 rounded-md border hover:shadow-elegant transition">
+                      <div className="font-medium">{srv.title}</div>
+                      <div className="text-sm text-muted-foreground">{srv.category} • {srv.delivery_days} dias • R$ {Number(srv.price).toLocaleString()}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

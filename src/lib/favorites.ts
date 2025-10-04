@@ -15,11 +15,11 @@ export async function addFavorite(userId: string, serviceId: string) {
     userId = user.id;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("favorites")
     .insert({ user_id: userId, service_id: serviceId })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Favorite;
@@ -33,7 +33,7 @@ export async function removeFavorite(userId: string, serviceId: string) {
     userId = user.id;
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("favorites")
     .delete()
     .match({ user_id: userId, service_id: serviceId });
@@ -47,7 +47,7 @@ export async function getFavoriteIdsByUser(userId?: string) {
   if (!userId) userId = (await supabase.auth.getUser()).data.user?.id;
   if (!userId) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("favorites")
     .select("service_id")
     .eq("user_id", userId);
@@ -61,7 +61,7 @@ export async function getFavoriteServicesByUser(userId?: string) {
   if (!userId) userId = (await supabase.auth.getUser()).data.user?.id;
   if (!userId) return [];
 
-  const { data: favRows, error: favError } = await supabase
+  const { data: favRows, error: favError } = await (supabase as any)
     .from("favorites")
     .select("service_id")
     .eq("user_id", userId);
@@ -70,7 +70,7 @@ export async function getFavoriteServicesByUser(userId?: string) {
   const ids = (favRows ?? []).map((r: any) => r.service_id);
   if (ids.length === 0) return [];
 
-  const { data: services, error: srvError } = await supabase
+  const { data: services, error: srvError } = await (supabase as any)
     .from("services")
     .select("*")
     .in("id", ids);

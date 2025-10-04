@@ -107,6 +107,7 @@ const reviews = [
 
 const ServiceDetail = () => {
   const { id } = useParams();
+  const actualServiceId = id && /[0-9a-fA-F-]{36}/.test(id) ? id : null;
   const [currentImage, setCurrentImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const { toast } = useToast();
@@ -114,17 +115,19 @@ const ServiceDetail = () => {
 
   useEffect(() => {
     const fetchUserAndFavorites = async () => {
-      // Resgata o User do Supabase
       const user = (await import("@/integrations/supabase/client").then(mod => mod.supabase.auth.getUser())).data.user;
       if (!user) return;
       setUserId(user.id);
 
-      // Verifica se já está como Favorito
-      const favoriteIds = await getFavoriteIdsByUser(user.id);
-      setIsFavorite(favoriteIds.includes(service.id));
+      if (actualServiceId) {
+        const favoriteIds = await getFavoriteIdsByUser(user.id);
+        setIsFavorite(favoriteIds.includes(actualServiceId));
+      } else {
+        setIsFavorite(false);
+      }
     };
     fetchUserAndFavorites();
-  }, []);
+  }, [actualServiceId]);
 
   const handleOrder = () => {
     toast({
@@ -141,13 +144,13 @@ const ServiceDetail = () => {
   };
 
   const toggleFavorite = async () => {
-    if (!userId) return;
+    if (!userId || !actualServiceId) return;
 
     if (isFavorite) {
-      await removeFavorite(userId, service.id);
+      await removeFavorite(userId, actualServiceId);
       toast({ title: "Removido dos favoritos" });
     } else {
-      await addFavorite(userId, service.id);
+      await addFavorite(userId, actualServiceId);
       toast({ title: "Adicionado aos favoritos" });
     }
 
@@ -213,6 +216,7 @@ const ServiceDetail = () => {
                       size="sm"
                       variant="outline"
                       onClick={toggleFavorite}
+                      disabled={!userId || !actualServiceId}
                       className={isFavorite ? "text-red-500" : ""}
                     >
                       <Heart
@@ -220,7 +224,7 @@ const ServiceDetail = () => {
                       />
                     </Button>
 
-                    <Sharemenu service={service} />
+                    <Sharemenu service={{ id: (actualServiceId ?? id ?? service.id) as string, title: service.title }} />
                   </div>
                 </div>
               </CardHeader>
