@@ -179,8 +179,12 @@ const ServiceDetail = () => {
                       <div>{service.totalOrders} pedidos</div>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    {actualServiceId && <FavoriteButton serviceId={actualServiceId} />}
+                  <div className="flex items-center gap-2">
+                    <FavoriteButton 
+                      serviceId={actualServiceId || ""} 
+                      size="sm"
+                      variant="outline"
+                    />
                     <Sharemenu service={{ id: (actualServiceId ?? id ?? service.id) as string, title: service.title }} />
                   </div>
                 </div>
