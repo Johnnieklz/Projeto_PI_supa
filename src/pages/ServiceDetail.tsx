@@ -17,12 +17,10 @@ import {
   MapPin,
   Shield,
   MessageCircle,
-  Heart,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast as sonnerToast } from "sonner";
+import { useState } from "react";
 import Sharemenu from "@/components/ui/sharemenu";
-import { addFavorite, removeFavorite, getFavoriteIdsByUser } from "@/lib/favorites";
+import FavoriteButton from "@/components/FavoriteButton";
 
 // Mock service data
 const service = {
@@ -110,43 +108,7 @@ const ServiceDetail = () => {
   const { id } = useParams();
   const actualServiceId = id && /[0-9a-fA-F-]{36}/.test(id) ? id : null;
   const [currentImage, setCurrentImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const { toast } = useToast();
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUserAndFavorites = async () => {
-      const user = (await import("@/integrations/supabase/client").then(mod => mod.supabase.auth.getUser())).data.user;
-      if (!user) return;
-      setUserId(user.id);
-
-      if (actualServiceId) {
-        const favoriteIds = await getFavoriteIdsByUser(user.id);
-        setIsFavorite(favoriteIds.includes(actualServiceId));
-      } else {
-        setIsFavorite(false);
-      }
-    };
-    fetchUserAndFavorites();
-  }, [actualServiceId]);
-
-  useEffect(() => {
-    let unsub: { unsubscribe: () => void } | null = null;
-    (async () => {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        const uid = session?.user?.id ?? null;
-        setUserId(uid);
-        if (uid && actualServiceId) {
-          getFavoriteIdsByUser(uid)
-            .then(ids => setIsFavorite(ids.includes(actualServiceId)))
-            .catch(() => {});
-        }
-      });
-      unsub = subscription;
-    })();
-    return () => unsub?.unsubscribe();
-  }, [actualServiceId]);
 
   const handleOrder = () => {
     toast({
@@ -162,26 +124,6 @@ const ServiceDetail = () => {
     });
   };
 
-  const toggleFavorite = async () => {
-    if (!userId) {
-      toast({ title: "Faça login para favoritar" });
-      return;
-    }
-    if (!actualServiceId) {
-      toast({ title: "Favoritar disponível apenas para serviços publicados" });
-      return;
-    }
-
-    if (isFavorite) {
-      await removeFavorite(userId, actualServiceId);
-      toast({ title: "Removido dos favoritos" });
-    } else {
-      await addFavorite(userId, actualServiceId);
-      toast({ title: "Adicionado aos favoritos" });
-    }
-
-    setIsFavorite(!isFavorite);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -238,19 +180,7 @@ const ServiceDetail = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={toggleFavorite}
-                      disabled={!userId || !actualServiceId}
-                      title={!userId ? "Faça login para favoritar" : !actualServiceId ? "Disponível apenas para serviços publicados" : isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                      className={isFavorite ? "text-red-500" : ""}
-                    >
-                      <Heart
-                        className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
-                      />
-                    </Button>
-
+                    {actualServiceId && <FavoriteButton serviceId={actualServiceId} />}
                     <Sharemenu service={{ id: (actualServiceId ?? id ?? service.id) as string, title: service.title }} />
                   </div>
                 </div>

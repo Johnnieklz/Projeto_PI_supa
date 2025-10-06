@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Upload, User, Save, LogOut, Heart } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { getFavoriteServicesByUser } from "@/lib/favorites";
+import FavoriteButton from "@/components/FavoriteButton";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -37,8 +38,27 @@ const Profile = () => {
       if (!user) return;
       setLoadingFav(true);
       try {
-        const services = await getFavoriteServicesByUser(user.id);
-        setFavorites(services || []);
+        const { data } = await supabase
+          .from("favorites")
+          .select(`
+            service_id,
+            services (
+              id,
+              title,
+              description,
+              price,
+              category,
+              delivery_days
+            )
+          `)
+          .eq("user_id", user.id);
+
+        if (data) {
+          const favServices = data
+            .filter((f: any) => f.services)
+            .map((f: any) => f.services);
+          setFavorites(favServices);
+        }
       } catch (e) {
         console.error('Erro ao carregar favoritos', e);
       } finally {
@@ -46,6 +66,19 @@ const Profile = () => {
       }
     };
     loadFavorites();
+
+    // Recarregar favoritos quando houver mudanças na tabela
+    const channel = supabase
+      .channel('favorites-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'favorites', filter: `user_id=eq.${user?.id}` },
+        () => loadFavorites()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,22 +223,58 @@ const Profile = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Heart className="mr-2 h-5 w-5" /> Meus Favoritos
+                <Heart className="mr-2 h-5 w-5 text-red-500" /> Meus Favoritos
               </CardTitle>
               <CardDescription>Serviços que você marcou como favorito</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingFav ? (
-                <p className="text-muted-foreground">Carregando favoritos...</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Carregando favoritos...</p>
+                </div>
               ) : favorites.length === 0 ? (
-                <p className="text-muted-foreground">Você ainda não tem favoritos.</p>
+                <div className="text-center py-8">
+                  <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground mb-2">
+                    Você ainda não tem favoritos.
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Explore serviços e salve seus favoritos aqui!
+                  </p>
+                  <Link to="/services">
+                    <Button variant="outline" size="sm">
+                      Explorar Serviços
+                    </Button>
+                  </Link>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {favorites.map((srv) => (
-                    <Link key={srv.id} to={`/services/${srv.id}`} className="block p-3 rounded-md border hover:shadow-elegant transition">
-                      <div className="font-medium">{srv.title}</div>
-                      <div className="text-sm text-muted-foreground">{srv.category} • {srv.delivery_days} dias • R$ {Number(srv.price).toLocaleString()}</div>
-                    </Link>
+                <div className="space-y-3">
+                  {favorites.map((srv: any) => (
+                    <div
+                      key={srv.id}
+                      className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors group"
+                    >
+                      <Link to={`/services/${srv.id}`} className="flex-1 space-y-2">
+                        <h4 className="font-semibold group-hover:text-primary transition-colors">
+                          {srv.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {srv.description}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="text-xs">
+                            {srv.category}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {srv.delivery_days} dias
+                          </span>
+                          <span className="text-sm font-semibold text-primary">
+                            R$ {Number(srv.price).toLocaleString()}
+                          </span>
+                        </div>
+                      </Link>
+                      <FavoriteButton serviceId={srv.id} />
+                    </div>
                   ))}
                 </div>
               )}
