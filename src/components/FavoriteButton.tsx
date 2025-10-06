@@ -1,69 +1,29 @@
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFavorites } from "@/hooks/useFavorites";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner"; // usa o toast visual do projeto
 
 interface FavoriteButtonProps {
   serviceId: string;
-  size?: "default" | "sm" | "lg" | "icon";
-  variant?: "default" | "outline" | "ghost";
-  className?: string;
-  showLabel?: boolean;
 }
 
-const FavoriteButton = ({
-  serviceId,
-  size = "sm",
-  variant = "outline",
-  className,
-  showLabel = false,
-}: FavoriteButtonProps) => {
-  const navigate = useNavigate();
-  const { isFavorite, isLoading, toggleFavorite, isAuthenticated } = useFavorites(serviceId);
-
-  const isValidServiceId = serviceId && /[0-9a-fA-F-]{36}/.test(serviceId);
-
-  const handleClick = async (e: React.MouseEvent) => {
+const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isValidServiceId) {
-      return;
-    }
+    console.log("Clique detectado no botão de favoritos:", serviceId);
 
-    if (!isAuthenticated) {
-      navigate("/auth");
-      return;
-    }
-
-    await toggleFavorite();
+    toast.success("Item adicionado aos favoritos ❤️");
   };
 
   return (
     <Button
-      size={size}
-      variant={variant}
+      size="sm"
+      variant="outline"
       onClick={handleClick}
-      disabled={isLoading || !isValidServiceId}
-      className={cn(
-        isFavorite && isValidServiceId && "text-red-500 hover:text-red-600",
-        className
-      )}
-      title={
-        !isValidServiceId
-          ? "Disponível apenas para serviços publicados"
-          : !isAuthenticated
-          ? "Faça login para favoritar"
-          : isFavorite
-          ? "Remover dos favoritos"
-          : "Adicionar aos favoritos"
-      }
+      className="hover:text-red-600"
     >
-      <Heart className={cn("h-4 w-4", isFavorite && isValidServiceId && "fill-current")} />
-      {showLabel && (
-        <span className="ml-2">{isFavorite ? "Favoritado" : "Favoritar"}</span>
-      )}
+      <Heart className="h-4 w-4 mr-1" />
     </Button>
   );
 };

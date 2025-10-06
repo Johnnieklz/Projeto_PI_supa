@@ -68,7 +68,9 @@ export const useFavorites = (serviceId?: string) => {
 
         if (error) throw error;
 
-        setFavoriteIds((prev) => prev.filter((id) => id !== effectiveServiceId));
+        setFavoriteIds((prev) =>
+          prev.filter((id) => id !== effectiveServiceId)
+        );
         if (effectiveServiceId === serviceId) setIsFavorite(false);
         toast.success("Removido dos favoritos");
       } else {
