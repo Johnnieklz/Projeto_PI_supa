@@ -29,6 +29,63 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          deadline: string | null
+          delivery_days: number
+          description: string
+          id: string
+          payment_method: string | null
+          payment_status: string
+          progress: number | null
+          provider_id: string
+          requirements: string | null
+          service_id: string
+          status: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          delivery_days: number
+          description: string
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          progress?: number | null
+          provider_id: string
+          requirements?: string | null
+          service_id: string
+          status?: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          delivery_days?: number
+          description?: string
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          progress?: number | null
+          provider_id?: string
+          requirements?: string | null
+          service_id?: string
+          status?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string | null

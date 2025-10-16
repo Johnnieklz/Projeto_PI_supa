@@ -1,19 +1,33 @@
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner"; // usa o toast visual do projeto
+import { useFavorites } from "@/hooks/useFavorites";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface FavoriteButtonProps {
   serviceId: string;
 }
 
 const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
-  const handleClick = (e: React.MouseEvent) => {
+  const navigate = useNavigate();
+  const { isFavorite, isLoading, toggleFavorite, isAuthenticated } = useFavorites(serviceId);
+
+  const isValidServiceId = serviceId && /[0-9a-fA-F-]{36}/.test(serviceId);
+
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    console.log("Clique detectado no botão de favoritos:", serviceId);
+    if (!isValidServiceId) {
+      return;
+    }
 
-    toast.success("Item adicionado aos favoritos ❤️");
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+
+    await toggleFavorite();
   };
 
   return (
@@ -21,9 +35,22 @@ const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
       size="sm"
       variant="outline"
       onClick={handleClick}
-      className="hover:text-red-600"
+      disabled={isLoading || !isValidServiceId}
+      className={cn(
+        "hover:text-red-600",
+        isFavorite && isValidServiceId && "text-red-500"
+      )}
+      title={
+        !isValidServiceId
+          ? "Disponível apenas para serviços publicados"
+          : !isAuthenticated
+          ? "Faça login para favoritar"
+          : isFavorite
+          ? "Remover dos favoritos"
+          : "Adicionar aos favoritos"
+      }
     >
-      <Heart className="h-4 w-4 mr-1" />
+      <Heart className={cn("h-4 w-4 mr-1", isFavorite && isValidServiceId && "fill-current")} />
     </Button>
   );
 };

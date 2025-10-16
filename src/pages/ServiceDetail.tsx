@@ -21,6 +21,7 @@ import {
 import { useState } from "react";
 import Sharemenu from "@/components/ui/sharemenu";
 import FavoriteButton from "@/components/FavoriteButton";
+import PaymentModal from "@/components/PaymentModal";
 
 // Mock service data
 const service = {
@@ -109,12 +110,17 @@ const ServiceDetail = () => {
   const actualServiceId = id && /[0-9a-fA-F-]{36}/.test(id) ? id : null;
   const [currentImage, setCurrentImage] = useState(0);
   const { toast } = useToast();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const handleOrder = () => {
-    toast({
-      title: "Pedido iniciado!",
-      description: "Você será redirecionado para o pagamento.",
-    });
+    if (!actualServiceId) {
+      toast({
+        title: "Serviço indisponível",
+        description: "Este é um serviço de demonstração.",
+      });
+      return;
+    }
+    setShowPaymentModal(true);
   };
 
   const handleContact = () => {
@@ -182,8 +188,6 @@ const ServiceDetail = () => {
                   <div className="flex items-center gap-2">
                     <FavoriteButton 
                       serviceId={actualServiceId || ""} 
-                      size="sm"
-                      variant="outline"
                     />
                     <Sharemenu service={{ id: (actualServiceId ?? id ?? service.id) as string, title: service.title }} />
                   </div>
@@ -337,6 +341,19 @@ const ServiceDetail = () => {
           </div>
         </div>
       </main>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        service={{
+          id: actualServiceId || "",
+          title: service.title,
+          price: service.price,
+          deliveryDays: parseInt(service.deliveryTime.split("-")[0]),
+          providerId: "00000000-0000-0000-0000-000000000000", // Mock provider ID
+        }}
+      />
     </div>
   );
 };

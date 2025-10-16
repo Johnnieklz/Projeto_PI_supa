@@ -15,17 +15,13 @@ const ProfileStats = React.lazy(() => import("./DashboardSections/ProfileStats")
 const UserServices = React.lazy(() => import("./DashboardSections/UserServices"));
 const RecentContracts = React.lazy(() => import("./DashboardSections/RecentContracts"));
 
-const recentContractsMock = [
-  { id: "1", service: "Design Gráfico Profissional", client: "João Silva", status: "Em Andamento", value: 299, deadline: "2025-01-15" },
-  { id: "2", service: "Consultoria em UX/UI", client: "Maria Santos", status: "Concluído", value: 799, deadline: "2025-01-10" },
-  { id: "3", service: "Design Gráfico Profissional", client: "Pedro Costa", status: "Aguardando Aprovação", value: 299, deadline: "2025-01-20" }
-];
-
 const Dashboard = () => {
   const { user } = useAuth();
   const [userServices, setUserServices] = useState<any[]>([]);
+  const [userContracts, setUserContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalServices: 0, totalContracts: 34, totalEarnings: 15420, monthlyGrowth: 23.4 });
+  const [contractsLoading, setContractsLoading] = useState(true);
+  const [stats, setStats] = useState({ totalServices: 0, totalContracts: 0, totalEarnings: 0, monthlyGrowth: 0 });
 
   const loadUserServices = async () => {
     if (!user) return;
@@ -39,6 +35,50 @@ const Dashboard = () => {
     finally { setLoading(false); }
   };
 
+  const loadUserContracts = async () => {
+    if (!user) return;
+    try {
+      setContractsLoading(true);
+      
+      // Buscar contratos onde o usuário é cliente ou prestador
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          *,
+          services:service_id (title),
+          client_profile:client_id (full_name),
+          provider_profile:provider_id (full_name)
+        `)
+        .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar contratos:', error);
+        toast.error('Erro ao carregar contratos');
+        return;
+      }
+
+      // Calcular estatísticas
+      const totalContracts = data?.length || 0;
+      const totalEarnings = data
+        ?.filter(c => c.provider_id === user.id && c.payment_status === 'paid')
+        .reduce((acc, c) => acc + Number(c.value), 0) || 0;
+
+      setUserContracts(data || []);
+      setStats(prev => ({ 
+        ...prev, 
+        totalContracts,
+        totalEarnings,
+        monthlyGrowth: 0 // Calcular growth real se necessário
+      }));
+    } catch (error) {
+      console.error('Erro inesperado ao carregar contratos:', error);
+      toast.error('Erro inesperado ao carregar contratos');
+    } finally {
+      setContractsLoading(false);
+    }
+  };
+
   const handleDeleteService = async (id: string, title: string) => {
     if (!confirm(`Deseja excluir "${title}"?`)) return;
     const { error } = await supabase.from('services').delete().eq('id', id).eq('user_id', user?.id);
@@ -47,7 +87,12 @@ const Dashboard = () => {
     loadUserServices();
   };
 
-  useEffect(() => { if (user) loadUserServices(); }, [user]);
+  useEffect(() => { 
+    if (user) {
+      loadUserServices();
+      loadUserContracts();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,7 +128,7 @@ const Dashboard = () => {
 
           <TabsContent value="contracts">
             <Suspense fallback={<Skeleton height="200px" />}>
-              <RecentContracts contracts={recentContractsMock} />
+              <RecentContracts contracts={userContracts} loading={contractsLoading} />
             </Suspense>
           </TabsContent>
         </Tabs>
