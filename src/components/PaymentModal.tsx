@@ -20,6 +20,7 @@ interface PaymentModalProps {
     price: number;
     deliveryDays: number;
     providerId: string;
+    isDemo?: boolean;
   };
 }
 
@@ -94,6 +95,21 @@ const PaymentModal = ({ open, onOpenChange, service }: PaymentModalProps) => {
       if (!user) {
         toast.error("Você precisa estar logado");
         setIsProcessing(false);
+        return;
+      }
+
+      // Se for serviço demo, apenas simular
+      if (service.isDemo) {
+        setIsPaid(true);
+        toast.success("Pagamento simulado com sucesso! 🎉", {
+          description: "Este é um ambiente de demonstração. Crie um serviço real para contratos reais.",
+        });
+
+        // Redirecionar após 3 segundos
+        setTimeout(() => {
+          onOpenChange(false);
+          navigate("/dashboard");
+        }, 3000);
         return;
       }
 
@@ -173,15 +189,25 @@ const PaymentModal = ({ open, onOpenChange, service }: PaymentModalProps) => {
               <CheckCircle2 className="h-20 w-20 text-success" />
             </div>
             <h3 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
-              Pagamento Aprovado!
+              {service.isDemo ? "Simulação Concluída!" : "Pagamento Aprovado!"}
             </h3>
             <p className="text-muted-foreground text-center max-w-md">
-              Seu pedido foi confirmado com sucesso. Você será redirecionado para acompanhar o contrato em instantes.
+              {service.isDemo 
+                ? "Você testou todo o fluxo de pagamento! Em um serviço real, o contrato seria criado e você seria redirecionado."
+                : "Seu pedido foi confirmado com sucesso. Você será redirecionado para acompanhar o contrato em instantes."
+              }
             </p>
             <div className="flex items-center gap-2 text-sm text-success">
               <Shield className="h-4 w-4" />
-              <span>Transação 100% segura</span>
+              <span>{service.isDemo ? "Ambiente de simulação" : "Transação 100% segura"}</span>
             </div>
+            {service.isDemo && (
+              <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm text-center">
+                  💡 Crie um serviço real na página <strong>"Criar Serviço"</strong> para testar com contratos reais!
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-6">

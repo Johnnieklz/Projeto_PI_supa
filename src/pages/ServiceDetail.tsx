@@ -184,14 +184,6 @@ const ServiceDetail = () => {
       navigate('/auth');
       return;
     }
-
-    if (!actualServiceId) {
-      toast({
-        title: "Serviço indisponível",
-        description: "Este é um serviço de demonstração. Crie um serviço real para testar!",
-      });
-      return;
-    }
     
     setShowPaymentModal(true);
   };
@@ -432,19 +424,25 @@ const ServiceDetail = () => {
       </main>
 
       {/* Payment Modal */}
-      {realService && (
-        <PaymentModal
-          open={showPaymentModal}
-          onOpenChange={setShowPaymentModal}
-          service={{
-            id: realService.id,
-            title: realService.title,
-            price: Number(realService.price),
-            deliveryDays: realService.delivery_days,
-            providerId: realService.user_id,
-          }}
-        />
-      )}
+      <PaymentModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        service={realService ? {
+          id: realService.id,
+          title: realService.title,
+          price: Number(realService.price),
+          deliveryDays: realService.delivery_days,
+          providerId: realService.user_id,
+          isDemo: false,
+        } : {
+          id: displayService.id,
+          title: displayService.title,
+          price: displayService.price,
+          deliveryDays: parseInt(displayService.deliveryTime),
+          providerId: "demo-provider",
+          isDemo: true,
+        }}
+      />
     </div>
   );
 };
