@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Sharemenu from "@/components/ui/sharemenu";
+import FavoriteButton from "@/components/FavoriteButton";
 
 // Mock data for services
 const services = [
@@ -258,6 +259,7 @@ const Services = () => {
                       R$ {service.price.toLocaleString()}
                     </span>
                     <div className="flex gap-2">
+                      <FavoriteButton serviceId={service.id} />
                       <Sharemenu service={service} /> 
                       <Button size="sm" className="gradient-primary">
                         Ver Detalhes
