@@ -26,7 +26,7 @@ const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
     if (!isValidServiceId) {
       setLocalFavorite((prev) => {
         const next = !prev;
-        toast.success(next ? "Adicionado aos favoritos (simulação)" : "Removido dos favoritos (simulação)");
+        toast.success(next ? "Adicionado aos favoritos" : "Removido dos favoritos");
         return next;
       });
       return;
@@ -44,8 +44,8 @@ const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
 
   return (
     <Button
-      size="sm"
-      variant="outline"
+      variant="ghost"
+      size="icon"
       onClick={handleClick}
       disabled={isLoading}
       className={cn(
@@ -54,7 +54,7 @@ const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
       )}
       title={
         !isValidServiceId
-          ? (localFavorite ? "Remover dos favoritos (simulação)" : "Adicionar aos favoritos (simulação)")
+          ? (localFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos")
           : !isAuthenticated
           ? "Faça login para favoritar"
           : isFavorite
@@ -62,7 +62,7 @@ const FavoriteButton = ({ serviceId }: FavoriteButtonProps) => {
           : "Adicionar aos favoritos"
       }
     >
-      <Heart className={cn("h-4 w-4 mr-1", favored && "fill-current")} />
+      <Heart className={cn("h-4 w-4", favored && "fill-current")} />
     </Button>
   );
 };
