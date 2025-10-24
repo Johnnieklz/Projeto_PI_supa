@@ -253,7 +253,7 @@ const ServiceDetail = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Order Card */}
-            <Card className="sticky top-24">
+            <Card className="sticky">
               <CardHeader>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-primary mb-2">
