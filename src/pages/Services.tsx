@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import Sharemenu from "@/components/ui/sharemenu"; //criado para importar sharemenu 
+import Sharemenu from "@/components/ui/sharemenu";
 
 // Mock data for services
 const services = [
@@ -84,21 +84,10 @@ const Services = () => {
       
       const startIndex = (pageNum - 1) * SERVICES_PER_PAGE;
       
+      // Primeiro, vamos buscar os serviços sem o join para ver a estrutura
       const { data, error, count } = await supabase
         .from('services')
-        .select(`
-          id,
-          title,
-          description,
-          category,
-          price,
-          delivery_days,
-          created_at,
-          user_id,
-          profiles!services_user_id_fkey (
-            full_name
-          )
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('active', true)
         .order('created_at', { ascending: false })
         .range(startIndex, startIndex + SERVICES_PER_PAGE - 1);
@@ -106,19 +95,57 @@ const Services = () => {
       if (error) {
         console.error('Erro ao carregar serviços:', error);
         toast.error('Erro ao carregar serviços');
-      } else {
-        const newServices = data || [];
+        return;
+      }
+
+      const newServices = data || [];
+      
+      // Se quisermos buscar informações do usuário, precisamos fazer uma query separada
+      if (newServices.length > 0) {
+        const userIds = newServices.map(service => service.user_id).filter(Boolean);
         
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', userIds);
+          
+          // Combinar os dados
+          const servicesWithProfiles = newServices.map(service => ({
+            ...service,
+            profile: profilesData?.find(profile => profile.id === service.user_id) || { full_name: 'Usuário' }
+          }));
+          
+          if (append) {
+            setRealServices(prev => [...prev, ...servicesWithProfiles]);
+          } else {
+            setRealServices(servicesWithProfiles);
+          }
+        } else {
+          // Se não há user_ids, apenas adiciona um profile padrão
+          const servicesWithDefaultProfile = newServices.map(service => ({
+            ...service,
+            profile: { full_name: 'Usuário' }
+          }));
+          
+          if (append) {
+            setRealServices(prev => [...prev, ...servicesWithDefaultProfile]);
+          } else {
+            setRealServices(servicesWithDefaultProfile);
+          }
+        }
+      } else {
         if (append) {
           setRealServices(prev => [...prev, ...newServices]);
         } else {
           setRealServices(newServices);
         }
-        
-        // Verificar se há mais serviços
-        const totalLoaded = append ? realServices.length + newServices.length : newServices.length;
-        setHasMore(totalLoaded < (count || 0));
       }
+      
+      // Verificar se há mais serviços
+      const totalLoaded = append ? realServices.length + newServices.length : newServices.length;
+      setHasMore(totalLoaded < (count || 0));
+      
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast.error('Erro inesperado ao carregar serviços');
@@ -139,19 +166,24 @@ const Services = () => {
 
   // Filtrar serviços baseado na categoria e busca
   const filteredServices = [...services, ...realServices.map(service => ({
-    ...service,
+    id: service.id,
+    title: service.title,
+    description: service.description,
+    category: service.category,
+    price: service.price,
     rating: 5.0,
     reviews: 0,
-    provider: service.profiles?.full_name || "Usuário",
+    provider: service.profile?.full_name || "Usuário",
     location: "Brasil",
-    deliveryTime: `${service.delivery_days} dias`,
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop"
+    deliveryTime: `${service.delivery_days || 7} dias`,
+    image: service.image_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop"
   }))].filter(service => {
     const matchesCategory = selectedCategory === "Todos" || service.category === selectedCategory;
     const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -217,57 +249,56 @@ const Services = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredServices.map((service) => (
-            <Link key={service.id} to={`/services/${service.id}`}>
-              <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 shadow-card">
-                <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-t-lg overflow-hidden">
-                  <img
-                    src={service.image}
-                    alt={service.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="secondary">{service.category}</Badge>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-                      {service.rating} ({service.reviews})
-                    </div>
+              <Link key={service.id} to={`/services/${service.id}`}>
+                <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 shadow-card">
+                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-t-lg overflow-hidden">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                    {service.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CardDescription className="line-clamp-2 mb-4">
-                    {service.description}
-                  </CardDescription>
-                  
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {service.provider} • {service.location}
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="secondary">{service.category}</Badge>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+                        {service.rating} ({service.reviews})
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Entrega em {service.deliveryTime}
+                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                      {service.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CardDescription className="line-clamp-2 mb-4">
+                      {service.description}
+                    </CardDescription>
+                    
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {service.provider} • {service.location}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Entrega em {service.deliveryTime}
+                      </div>
+                    </div>      
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                      <span className="text-lg font-bold text-primary">
+                        R$ {service.price.toLocaleString()}
+                      </span>
+                      <div className="flex gap-2">
+                        <Sharemenu service={service} /> 
+                        <Button size="sm" className="gradient-primary">
+                          Ver Detalhes
+                        </Button>
+                      </div>
                     </div>
-                  </div>      
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                    <span className="text-lg font-bold text-primary">
-                      R$ {service.price.toLocaleString()}
-                    </span>
-                    <div className="flex gap-2">
-                      <Sharemenu service={service} /> 
-                      <Button size="sm" className="gradient-primary">
-                        Ver Detalhes
-                      </Button>
-                    </div>
-                  </div>
-
-                </CardContent>
-              </Card>
-            </Link>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
