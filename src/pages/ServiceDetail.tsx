@@ -7,210 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Header from "@/components/Header";
 import { useParams } from "react-router-dom";
 import { Star, Clock, MapPin, Shield, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sharemenu from "@/components/ui/sharemenu";
 import FavoriteButton from "@/components/FavoriteButton";
-
-// Mock service data - corrigido para ser um objeto único baseado no ID
-const getServiceById = (id: string) => {
-  const services = [
-    {
-      id: "1",
-      title: "Design Gráfico Profissional",
-      description:
-        "Criação de logos, identidade visual e materiais gráficos para sua empresa com anos de experiência no mercado.",
-      fullDescription: `Ofereço serviços completos de design gráfico para empresas e empreendedores que buscam uma identidade visual única e profissional. 
-
-Meus serviços incluem:
-• Criação de logos e marcas
-• Identidade visual completa
-• Cartões de visita e papelaria
-• Materiais para redes sociais
-• Banners e flyers
-• Apresentações corporativas
-
-Com mais de 8 anos de experiência no mercado, já atendi centenas de clientes satisfeitos. Utilizo as ferramentas mais modernas do mercado como Adobe Creative Suite, Figma e outras tecnologias de ponta.
-
-Trabalho de forma colaborativa, sempre ouvindo as necessidades do cliente e garantindo entregas de alta qualidade dentro do prazo estabelecido.`,
-      category: "Design",
-      price: 299,
-      rating: 4.9,
-      reviews: 127,
-      totalOrders: 340,
-      deliveryTime: "3-5 dias",
-      provider: {
-        name: "Ana Silva",
-        avatar:
-          "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face",
-        location: "São Paulo, SP",
-        memberSince: "2020",
-        rating: 4.8,
-        totalReviews: 298,
-        responseTime: "2 horas",
-        languages: ["Português", "Inglês"],
-      },
-      images: [
-        "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&h=400&fit=crop",
-      ],
-      features: [
-        "Revisões ilimitadas",
-        "Arquivos em alta resolução",
-        "Suporte pós-entrega",
-        "Garantia de satisfação",
-      ],
-    },
-    {
-      id: "2",
-      title: "Desenvolvimento de Website",
-      description:
-        "Sites responsivos e modernos com as melhores tecnologias do mercado",
-      fullDescription: `Desenvolvimento completo de websites responsivos e modernos utilizando as tecnologias mais atuais do mercado.
-
-Meus serviços incluem:
-• Desenvolvimento front-end com React/Next.js
-• Desenvolvimento back-end com Node.js
-• Design responsivo e mobile-first
-• Otimização SEO
-• Integração com APIs
-• Hospedagem e deploy
-• Manutenção e suporte
-
-Tecnologias que utilizo:
-• Front-end: React, Next.js, TypeScript, Tailwind CSS
-• Back-end: Node.js, Express, MongoDB, PostgreSQL
-• Ferramentas: Git, Docker, AWS, Vercel
-
-Entrego projetos completos, testados e otimizados para performance, sempre seguindo as melhores práticas de desenvolvimento.`,
-      category: "Tecnologia",
-      price: 1299,
-      rating: 4.8,
-      reviews: 89,
-      totalOrders: 156,
-      deliveryTime: "7-14 dias",
-      provider: {
-        name: "Carlos Mendes",
-        avatar:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-        location: "Rio de Janeiro, RJ",
-        memberSince: "2019",
-        rating: 4.9,
-        totalReviews: 134,
-        responseTime: "1 hora",
-        languages: ["Português", "Inglês", "Espanhol"],
-      },
-      images: [
-        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&h=400&fit=crop",
-      ],
-      features: [
-        "Código limpo e documentado",
-        "Design responsivo",
-        "Otimização SEO",
-        "Suporte por 30 dias",
-      ],
-    },
-    {
-      id: "3",
-      title: "Consultoria em Marketing Digital",
-      description:
-        "Estratégias personalizadas para aumentar suas vendas online",
-      fullDescription: `Consultoria especializada em marketing digital para alavancar seus resultados online.
-
-Serviços oferecidos:
-• Análise de mercado e concorrência
-• Estratégia de conteúdo
-• Gestão de redes sociais
-• Campanhas de tráfego pago (Google Ads, Meta Ads)
-• Email marketing
-• SEO e otimização de conversão
-• Analytics e relatórios de performance
-
-Com 6 anos de experiência no mercado digital, já ajudei mais de 50 empresas a aumentarem suas vendas através de estratégias data-driven e planejamento personalizado.`,
-
-      category: "Marketing",
-      price: 499,
-      rating: 4.7,
-      reviews: 156,
-      totalOrders: 203,
-      deliveryTime: "2-3 dias",
-      provider: {
-        name: "Mariana Costa",
-        avatar:
-          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-        location: "Belo Horizonte, MG",
-        memberSince: "2021",
-        rating: 4.7,
-        totalReviews: 156,
-        responseTime: "3 horas",
-        languages: ["Português", "Inglês"],
-      },
-      images: [
-        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop",
-      ],
-      features: [
-        "Plano personalizado",
-        "Relatórios detalhados",
-        "Acompanhamento mensal",
-        "Consultoria estratégica",
-      ],
-    },
-    {
-      id: "4",
-      title: "Tradução Profissional",
-      description: "Tradução precisa e rápida para inglês, espanhol e francês",
-      fullDescription: `Serviço de tradução profissional para documentos, sites e conteúdo digital.
-
-Idiomas disponíveis:
-• Inglês ↔ Português
-• Espanhol ↔ Português  
-• Francês ↔ Português
-
-Tipos de tradução:
-• Documentos técnicos e acadêmicos
-• Sites e e-commerce
-• Conteúdo para redes sociais
-• Manuais e documentação
-• Material jurídico e contratos
-
-Sou tradutor certificado com 5 anos de experiência, garantindo precisão, contexto cultural adequado e entrega dentro do prazo combinado.`,
-      category: "Idiomas",
-      price: 199,
-      rating: 4.9,
-      reviews: 203,
-      totalOrders: 415,
-      deliveryTime: "1-2 dias",
-      provider: {
-        name: "Lucas Ferreira",
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-        location: "Florianópolis, SC",
-        memberSince: "2018",
-        rating: 4.9,
-        totalReviews: 203,
-        responseTime: "4 horas",
-        languages: ["Português", "Inglês", "Espanhol", "Francês"],
-      },
-      images: [
-        "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=400&fit=crop",
-        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop",
-      ],
-      features: [
-        "Tradução certificada",
-        "Revisão incluída",
-        "Formatação preservada",
-        "Confidencialidade",
-      ],
-    },
-  ];
-
-  return services.find((service) => service.id === id) || services[0];
-};
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const reviews = [
   {
@@ -247,26 +48,191 @@ const reviews = [
 
 const ServiceDetail = () => {
   const { id } = useParams();
-  const actualServiceId = id && /[0-9a-fA-F-]{36}/.test(id) ? id : null;
   const [currentImage, setCurrentImage] = useState(0);
-  const { toast } = useToast();
+  const [service, setService] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast: uiToast } = useToast();
 
-  // Obter o serviço baseado no ID
-  const service = getServiceById(id || "1");
+  // Buscar serviço do banco de dados
+  useEffect(() => {
+    const fetchService = async () => {
+      if (!id) return;
+
+      try {
+        setLoading(true);
+        
+        // Primeiro, buscar o serviço
+        const { data: serviceData, error: serviceError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('id', id)
+          .eq('active', true)
+          .single();
+
+        if (serviceError) {
+          console.error('Erro ao carregar serviço:', serviceError);
+          toast.error('Erro ao carregar serviço');
+          return;
+        }
+
+        if (serviceData) {
+          // Buscar informações do provedor separadamente
+          let providerData = null;
+          if (serviceData.user_id) {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url, created_at, location')
+              .eq('id', serviceData.user_id)
+              .single();
+
+            if (!profileError) {
+              providerData = profileData;
+            }
+          }
+
+          // Buscar reviews do serviço
+          const { data: reviewsData, error: reviewsError } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('service_id', id)
+            .order('created_at', { ascending: false });
+
+          if (reviewsError) {
+            console.error('Erro ao carregar reviews:', reviewsError);
+          }
+
+          // Buscar estatísticas do provedor (outros serviços do mesmo usuário)
+          let providerRating = 4.8;
+          let totalReviews = 0;
+          let totalOrders = 0;
+
+          if (serviceData.user_id) {
+            // Buscar todos os serviços ativos do provedor
+            const { data: providerServices, error: servicesError } = await supabase
+              .from('services')
+              .select('id, total_orders')
+              .eq('user_id', serviceData.user_id)
+              .eq('active', true);
+
+            if (!servicesError && providerServices) {
+              // Calcular total de pedidos
+              totalOrders = providerServices.reduce((sum, service) => 
+                sum + (service.total_orders || 0), 0
+              );
+
+              // Buscar reviews de todos os serviços do provedor
+              const serviceIds = providerServices.map(service => service.id);
+              const { data: allReviews, error: allReviewsError } = await supabase
+                .from('reviews')
+                .select('rating')
+                .in('service_id', serviceIds);
+
+              if (!allReviewsError && allReviews && allReviews.length > 0) {
+                providerRating = allReviews.reduce((sum, review) => 
+                  sum + (review.rating || 0), 0
+                ) / allReviews.length;
+                totalReviews = allReviews.length;
+              }
+            }
+          }
+
+          // Formatar os dados do serviço
+          const formattedService = {
+            id: serviceData.id,
+            title: serviceData.title,
+            description: serviceData.description,
+            fullDescription: serviceData.full_description || serviceData.description,
+            category: serviceData.category,
+            price: serviceData.price,
+            rating: serviceData.average_rating || 5.0,
+            reviews: reviewsData?.length || 0,
+            totalOrders: serviceData.total_orders || totalOrders || 0,
+            deliveryTime: `${serviceData.delivery_days || 7} dias`,
+            provider: {
+              name: providerData?.full_name || "Usuário",
+              avatar: providerData?.avatar_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+              location: providerData?.location || "Brasil",
+              memberSince: providerData?.created_at 
+                ? new Date(providerData.created_at).getFullYear().toString() 
+                : "2024",
+              rating: providerRating,
+              totalReviews: totalReviews,
+              responseTime: "2 horas",
+              languages: ["Português"]
+            },
+            images: serviceData.images && serviceData.images.length > 0 
+              ? serviceData.images 
+              : [
+                  "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop",
+                  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+                  "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&h=400&fit=crop",
+                ],
+            features: serviceData.features && serviceData.features.length > 0 
+              ? serviceData.features 
+              : [
+                  "Revisões ilimitadas",
+                  "Arquivos em alta resolução",
+                  "Suporte pós-entrega",
+                  "Garantia de satisfação",
+                ]
+          };
+
+          setService(formattedService);
+        }
+      } catch (error) {
+        console.error('Erro inesperado:', error);
+        toast.error('Erro ao carregar serviço');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchService();
+  }, [id]);
 
   const handleOrder = () => {
-    toast({
+    uiToast({
       title: "Pedido iniciado!",
       description: "Você será redirecionado para o pagamento.",
     });
   };
 
   const handleContact = () => {
-    toast({
+    uiToast({
       title: "Mensagem enviada",
-      description: `Mensagem enviada para ${service.provider.name}!`,
+      description: `Mensagem enviada para ${service?.provider.name || 'o prestador'}!`,
     });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Carregando serviço...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!service) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Serviço não encontrado.</p>
+            <Link to="/services">
+              <Button className="mt-4">Voltar para serviços</Button>
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -286,7 +252,7 @@ const ServiceDetail = () => {
                 />
               </div>
               <div className="flex gap-2 p-4">
-                {service.images.map((image, index) => (
+                {service.images.map((image: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImage(index)}
@@ -316,7 +282,7 @@ const ServiceDetail = () => {
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                        {service.rating} ({service.reviews} avaliações)
+                        {service.rating.toFixed(1)} ({service.reviews} avaliações)
                       </div>
                       <div>|</div>
                       <div>{service.totalOrders} pedidos</div>
@@ -324,13 +290,13 @@ const ServiceDetail = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <FavoriteButton
-                      serviceId={actualServiceId || service.id}
+                      serviceId={service.id}
                       size="sm"
                       variant="outline"
                     />
                     <Sharemenu
                       service={{
-                        id: (actualServiceId ?? id ?? service.id) as string,
+                        id: service.id,
                         title: service.title,
                       }}
                     />
@@ -348,7 +314,7 @@ const ServiceDetail = () => {
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-                    {service.features.map((feature, index) => (
+                    {service.features.map((feature: string, index: number) => (
                       <div key={index} className="flex items-center space-x-2">
                         <Shield className="h-4 w-4 text-success" />
                         <span className="text-sm">{feature}</span>
@@ -465,8 +431,7 @@ const ServiceDetail = () => {
                     <span className="text-muted-foreground">Avaliação:</span>
                     <div className="flex items-center">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-                      {service.provider.rating} ({service.provider.totalReviews}
-                      )
+                      {service.provider.rating.toFixed(1)} ({service.provider.totalReviews})
                     </div>
                   </div>
                   <div className="flex justify-between">
