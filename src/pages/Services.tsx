@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Sharemenu from "@/components/ui/sharemenu";
 
-// Mock data for services - apenas para demonstração quando não há serviços reais
-const mockServices = [
+// Mock data for services
+const services = [
   {
     id: "1",
     title: "Design Gráfico Profissional",
@@ -66,16 +66,7 @@ const mockServices = [
   }
 ];
 
-// Função para extrair categorias únicas dos serviços
-const getCategoriesFromServices = (services: any[]) => {
-  const categories = new Set(["Todos"]);
-  services.forEach(service => {
-    if (service.category) {
-      categories.add(service.category);
-    }
-  });
-  return Array.from(categories);
-};
+const categories = ["Todos", "Design", "Tecnologia", "Marketing", "Idiomas", "Consultoria"];
 
 const Services = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -84,7 +75,6 @@ const Services = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [categories, setCategories] = useState<string[]>(["Todos", "Design", "Tecnologia", "Marketing", "Idiomas", "Consultoria"]);
   const SERVICES_PER_PAGE = 8;
 
   // Carregar serviços reais do banco
@@ -94,7 +84,7 @@ const Services = () => {
       
       const startIndex = (pageNum - 1) * SERVICES_PER_PAGE;
       
-      // Buscar serviços do banco
+      // Primeiro, vamos buscar os serviços sem o join para ver a estrutura
       const { data, error, count } = await supabase
         .from('services')
         .select('*', { count: 'exact' })
@@ -110,23 +100,20 @@ const Services = () => {
 
       const newServices = data || [];
       
-      // Buscar informações dos usuários/provedores
+      // Se quisermos buscar informações do usuário, precisamos fazer uma query separada
       if (newServices.length > 0) {
         const userIds = newServices.map(service => service.user_id).filter(Boolean);
         
         if (userIds.length > 0) {
           const { data: profilesData } = await supabase
             .from('profiles')
-            .select('id, full_name, location')
+            .select('id, full_name')
             .in('id', userIds);
           
           // Combinar os dados
           const servicesWithProfiles = newServices.map(service => ({
             ...service,
-            profile: profilesData?.find(profile => profile.id === service.user_id) || { 
-              full_name: 'Usuário',
-              location: 'Brasil'
-            }
+            profile: profilesData?.find(profile => profile.id === service.user_id) || { full_name: 'Usuário' }
           }));
           
           if (append) {
@@ -134,21 +121,11 @@ const Services = () => {
           } else {
             setRealServices(servicesWithProfiles);
           }
-
-          // Atualizar categorias baseadas nos serviços reais
-          if (!append) {
-            const allServices = [...mockServices, ...servicesWithProfiles];
-            const dynamicCategories = getCategoriesFromServices(allServices);
-            setCategories(dynamicCategories);
-          }
         } else {
           // Se não há user_ids, apenas adiciona um profile padrão
           const servicesWithDefaultProfile = newServices.map(service => ({
             ...service,
-            profile: { 
-              full_name: 'Usuário',
-              location: 'Brasil'
-            }
+            profile: { full_name: 'Usuário' }
           }));
           
           if (append) {
@@ -156,21 +133,12 @@ const Services = () => {
           } else {
             setRealServices(servicesWithDefaultProfile);
           }
-
-          // Atualizar categorias
-          if (!append) {
-            const allServices = [...mockServices, ...servicesWithDefaultProfile];
-            const dynamicCategories = getCategoriesFromServices(allServices);
-            setCategories(dynamicCategories);
-          }
         }
       } else {
         if (append) {
           setRealServices(prev => [...prev, ...newServices]);
         } else {
           setRealServices(newServices);
-          // Se não há serviços reais, usar categorias padrão
-          setCategories(["Todos", "Design", "Tecnologia", "Marketing", "Idiomas", "Consultoria"]);
         }
       }
       
@@ -196,30 +164,20 @@ const Services = () => {
     loadServices();
   }, []);
 
-  // Formatar serviços para exibição
-  const formatServicesForDisplay = (services: any[]) => {
-    return services.map(service => ({
-      id: service.id,
-      title: service.title,
-      description: service.description,
-      category: service.category,
-      price: service.price,
-      rating: service.average_rating || 5.0,
-      reviews: service.reviews_count || 0,
-      provider: service.profile?.full_name || "Usuário",
-      location: service.profile?.location || "Brasil",
-      deliveryTime: `${service.delivery_days || 7} dias`,
-      image: service.image_url || service.images?.[0] || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop"
-    }));
-  };
-
-  // Combinar e filtrar serviços
-  const allServices = [
-    ...formatServicesForDisplay(mockServices),
-    ...formatServicesForDisplay(realServices)
-  ];
-
-  const filteredServices = allServices.filter(service => {
+  // Filtrar serviços baseado na categoria e busca
+  const filteredServices = [...services, ...realServices.map(service => ({
+    id: service.id,
+    title: service.title,
+    description: service.description,
+    category: service.category,
+    price: service.price,
+    rating: 5.0,
+    reviews: 0,
+    provider: service.profile?.full_name || "Usuário",
+    location: "Brasil",
+    deliveryTime: `${service.delivery_days || 7} dias`,
+    image: service.image_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop"
+  }))].filter(service => {
     const matchesCategory = selectedCategory === "Todos" || service.category === selectedCategory;
     const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -287,73 +245,62 @@ const Services = () => {
         ) : filteredServices.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum serviço encontrado.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Tente alterar os filtros ou termos de busca.
-            </p>
           </div>
         ) : (
-          <>
-            <div className="mb-4 text-sm text-muted-foreground">
-              Mostrando {filteredServices.length} serviço(s)
-              {selectedCategory !== "Todos" && ` na categoria ${selectedCategory}`}
-              {searchTerm && ` para "${searchTerm}"`}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredServices.map((service) => (
-                <Link key={service.id} to={`/services/${service.id}`}>
-                  <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 shadow-card">
-                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-t-lg overflow-hidden">
-                      <img
-                        src={service.image}
-                        alt={service.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredServices.map((service) => (
+              <Link key={service.id} to={`/services/${service.id}`}>
+                <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 shadow-card">
+                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-t-lg overflow-hidden">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="secondary">{service.category}</Badge>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+                        {service.rating} ({service.reviews})
+                      </div>
                     </div>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary">{service.category}</Badge>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-                          {service.rating.toFixed(1)} ({service.reviews})
-                        </div>
+                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                      {service.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CardDescription className="line-clamp-2 mb-4">
+                      {service.description}
+                    </CardDescription>
+                    
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {service.provider} • {service.location}
                       </div>
-                      <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                        {service.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <CardDescription className="line-clamp-2 mb-4">
-                        {service.description}
-                      </CardDescription>
-                      
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <div className="flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {service.provider} • {service.location}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Entrega em {service.deliveryTime}
-                        </div>
-                      </div>      
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                        <span className="text-lg font-bold text-primary">
-                          R$ {service.price.toLocaleString()}
-                        </span>
-                        <div className="flex gap-2">
-                          <Sharemenu service={service} /> 
-                          <Button size="sm" className="gradient-primary">
-                            Ver Detalhes
-                          </Button>
-                        </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Entrega em {service.deliveryTime}
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </>
+                    </div>      
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                      <span className="text-lg font-bold text-primary">
+                        R$ {service.price.toLocaleString()}
+                      </span>
+                      <div className="flex gap-2">
+                        <Sharemenu service={service} /> 
+                        <Button size="sm" className="gradient-primary">
+                          Ver Detalhes
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         )}
 
         {/* Load More */}
