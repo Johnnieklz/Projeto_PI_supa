@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
@@ -21,14 +21,28 @@ const categories = [
   "Redação",
   "Vídeo",
   "Música",
-  "Negócios"
+  "Negócios",
+  "Outros"
 ];
+
+const BUCKET = 'service-images';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const CreateService = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [fileList, setFileList] = useState<File[]>([]); // arquivos reais para upload
+  const createdUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    return () => {
+      // revoga todos os object URLs criados ao desmontar
+      createdUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      createdUrlsRef.current = [];
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,34 +52,22 @@ const CreateService = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       const formData = new FormData(e.target as HTMLFormElement);
       
-      // Extrair dados do formulário
-      const title = formData.get('title') as string;
-      const description = formData.get('description') as string;
-      const category = formData.get('category') as string;
-      const price = parseFloat(formData.get('price') as string);
-      const deliveryTime = formData.get('delivery-time') as string;
-      const requirements = formData.get('requirements') as string;
-      const extras = formData.get('extras') as string;
-
-      // Converter delivery time para dias
-      const deliveryDays = convertDeliveryTimeToDays(deliveryTime);
-
-      // Criar o serviço
+      // Create service first
       const { data: service, error: serviceError } = await supabase
         .from('services')
         .insert({
           user_id: user.id,
-          title,
-          description,
-          category: category.toLowerCase(),
-          price,
-          delivery_days: deliveryDays,
-          requirements: requirements || null,
-          extras: extras || null,
+          title: formData.get('title'),
+          description: formData.get('description'),
+          category: formData.get('category'),
+          price: parseFloat(formData.get('price') as string),
+          delivery_days: convertDeliveryTimeToDays(formData.get('delivery-time') as string),
+          requirements: formData.get('requirements'),
+          extras: formData.get('extras'),
         })
         .select()
         .single();
@@ -76,32 +78,55 @@ const CreateService = () => {
         return;
       }
 
-      // Criar imagens se houver
-      if (images.length > 0 && service?.id) {
-        const imageInserts = images.map(url => ({
-          service_id: service.id,
-          url
-        }));
+      // Upload images
+      if (fileList.length > 0 && service) {
+        const uploadPromises = fileList.map(async (file) => {
+          const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+          const filePath = `services/${service.id}/${fileName}`;
 
-        const { error: imagesError } = await supabase
-          .from('service_images')
-          .insert(imageInserts);
+          const { error: uploadError } = await supabase.storage
+            .from('service-images')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
-        if (imagesError) {
-          console.error('Erro ao salvar imagens:', imagesError);
-          // Não bloquear a criação do serviço por causa das imagens
+          if (uploadError) {
+            console.error('Erro upload:', uploadError);
+            return null;
+          }
+
+          const { data: publicUrlData } = supabase.storage
+            .from('service-images')
+            .getPublicUrl(filePath);
+
+          return publicUrlData?.publicUrl;
+        });
+
+        const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean);
+
+        if (uploadedUrls.length > 0) {
+          const { error: imageError } = await supabase
+            .from('service_images')
+            .insert(
+              uploadedUrls.map(url => ({
+                service_id: service.id,
+                url
+              }))
+            );
+
+          if (imageError) {
+            console.error('Erro ao salvar imagens:', imageError);
+          }
         }
       }
 
-      toast.success("Serviço criado com sucesso!");
-      
-      // Atualizar listas se necessário
-      window.dispatchEvent(new Event('serviceCreated'));
-      
-      navigate("/dashboard");
+      toast.success('Serviço criado com sucesso!');
+      navigate('/dashboard');
+
     } catch (error) {
-      console.error('Erro inesperado:', error);
-      toast.error('Erro inesperado ao criar serviço');
+      console.error('Erro:', error);
+      toast.error('Erro ao criar serviço');
     } finally {
       setIsLoading(false);
     }
@@ -122,16 +147,45 @@ const CreateService = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      // Simulate image upload
-      const newImages = Array.from(files).map((file, index) => 
-        `https://images.unsplash.com/photo-${1460925895917 + index}?w=300&h=200&fit=crop`
-      );
-      setImages([...images, ...newImages].slice(0, 5));
+      const fileArray = Array.from(files);
+      // criar previews a partir dos arquivos selecionados
+      const newUrls = fileArray.map((file) => {
+        const url = URL.createObjectURL(file);
+        createdUrlsRef.current.push(url);
+        return url;
+      });
+
+      setImages((prev) => {
+        const merged = [...prev, ...newUrls];
+        return merged.slice(0, 5); // limitar a 5
+      });
+
+      setFileList(prev => {
+        const mergedFiles = [...prev, ...fileArray];
+        return mergedFiles.slice(0, 5);
+      });
+
+      // resetar o input para permitir re-selecionar o mesmo arquivo
+      e.currentTarget.value = "";
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    setImages((prev) => {
+      const urlToRevoke = prev[index];
+      if (urlToRevoke) {
+        try {
+          URL.revokeObjectURL(urlToRevoke);
+        } catch (err) {
+          console.error('Erro ao revogar URL:', err);
+        }
+        // também remover do registro de URLs criadas
+        createdUrlsRef.current = createdUrlsRef.current.filter((u) => u !== urlToRevoke);
+      }
+      // também remover arquivo correspondente de fileList (manter em sincronia pela posição)
+      setFileList(prevFiles => prevFiles.filter((_, i) => i !== index));
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   return (

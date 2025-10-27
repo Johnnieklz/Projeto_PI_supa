@@ -22,6 +22,9 @@ const NotFound = React.lazy(() => import("./pages/NotFound"));
 const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Chat = React.lazy(() => import("./pages/Chat"));
+const PaymentProcess = React.lazy(() => import("./pages/PaymentProcess"));
+const OrderDetails = React.lazy(() => import("./pages/OrderDetails"));
+const Orders = React.lazy(() => import("./pages/Orders"));
 
 const queryClient = new QueryClient();
 
@@ -180,6 +183,16 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <ContractDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/payment-process/:orderId" element={<PaymentProcess />} />
+                <Route path="/orders/:orderId" element={<OrderDetails />} />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <Orders />
                     </ProtectedRoute>
                   }
                 />

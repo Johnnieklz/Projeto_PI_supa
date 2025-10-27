@@ -84,68 +84,49 @@ const Services = () => {
       
       const startIndex = (pageNum - 1) * SERVICES_PER_PAGE;
       
-      // Primeiro, vamos buscar os serviços sem o join para ver a estrutura
-      const { data, error, count } = await supabase
+      // Buscar serviços com imagens em uma única query
+      const { data: services, error: servicesError, count } = await supabase
         .from('services')
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          service_images (
+            url
+          )
+        `, { count: 'exact' })
         .eq('active', true)
         .order('created_at', { ascending: false })
         .range(startIndex, startIndex + SERVICES_PER_PAGE - 1);
 
-      if (error) {
-        console.error('Erro ao carregar serviços:', error);
+      if (servicesError) {
+        console.error('Erro ao carregar serviços:', servicesError);
         toast.error('Erro ao carregar serviços');
         return;
       }
 
-      const newServices = data || [];
-      
-      // Se quisermos buscar informações do usuário, precisamos fazer uma query separada
-      if (newServices.length > 0) {
-        const userIds = newServices.map(service => service.user_id).filter(Boolean);
+      // Processar os serviços e suas imagens
+      const servicesWithImages = services?.map(service => {
+        const firstImage = service.service_images?.[0]?.url;
         
-        if (userIds.length > 0) {
-          const { data: profilesData } = await supabase
-            .from('profiles')
-            .select('id, full_name')
-            .in('id', userIds);
-          
-          // Combinar os dados
-          const servicesWithProfiles = newServices.map(service => ({
-            ...service,
-            profile: profilesData?.find(profile => profile.id === service.user_id) || { full_name: 'Usuário' }
-          }));
-          
-          if (append) {
-            setRealServices(prev => [...prev, ...servicesWithProfiles]);
-          } else {
-            setRealServices(servicesWithProfiles);
-          }
-        } else {
-          // Se não há user_ids, apenas adiciona um profile padrão
-          const servicesWithDefaultProfile = newServices.map(service => ({
-            ...service,
-            profile: { full_name: 'Usuário' }
-          }));
-          
-          if (append) {
-            setRealServices(prev => [...prev, ...servicesWithDefaultProfile]);
-          } else {
-            setRealServices(servicesWithDefaultProfile);
-          }
-        }
+        // Debug: log para verificar as URLs das imagens
+        console.log('Service ID:', service.id);
+        console.log('Image URL:', firstImage);
+
+        return {
+          ...service,
+          profile: { full_name: service.user_name || 'Usuário' },
+          image_url: firstImage || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop'
+        };
+      }) || [];
+
+      if (append) {
+        setRealServices(prev => [...prev, ...servicesWithImages]);
       } else {
-        if (append) {
-          setRealServices(prev => [...prev, ...newServices]);
-        } else {
-          setRealServices(newServices);
-        }
+        setRealServices(servicesWithImages);
       }
-      
-      // Verificar se há mais serviços
-      const totalLoaded = append ? realServices.length + newServices.length : newServices.length;
+
+      const totalLoaded = append ? realServices.length + servicesWithImages.length : servicesWithImages.length;
       setHasMore(totalLoaded < (count || 0));
-      
+
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast.error('Erro inesperado ao carregar serviços');
@@ -165,24 +146,27 @@ const Services = () => {
   }, []);
 
   // Filtrar serviços baseado na categoria e busca
-  const filteredServices = [...services, ...realServices.map(service => ({
-    id: service.id,
-    title: service.title,
-    description: service.description,
-    category: service.category,
-    price: service.price,
-    rating: 5.0,
-    reviews: 0,
-    provider: service.profile?.full_name || "Usuário",
-    location: "Brasil",
-    deliveryTime: `${service.delivery_days || 7} dias`,
-    image: service.image_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop"
-  }))].filter(service => {
-    const matchesCategory = selectedCategory === "Todos" || service.category === selectedCategory;
-    const matchesSearch = service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredServices = realServices
+    .filter(service => {
+      const matchesCategory = selectedCategory === "Todos" || 
+                            service.category?.toLowerCase() === selectedCategory.toLowerCase();
+      const matchesSearch = service.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           service.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .map(service => ({
+      id: service.id,
+      title: service.title,
+      description: service.description,
+      category: service.category,
+      price: service.price,
+      rating: 5.0,
+      reviews: 0,
+      provider: service.profile?.full_name || "Usuário",
+      location: "Brasil",
+      deliveryTime: `${service.delivery_days || 7} dias`,
+      image: service.image_url
+    }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,9 +237,13 @@ const Services = () => {
                 <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 shadow-card">
                   <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-t-lg overflow-hidden">
                     <img
-                      src={service.image}
+                      src={service.image || '/placeholder-service.jpg'}
                       alt={service.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.src = '/placeholder-service.jpg';
+                      }}
                     />
                   </div>
                   <CardHeader className="pb-3">
@@ -322,3 +310,4 @@ const Services = () => {
 };
 
 export default Services;
+
