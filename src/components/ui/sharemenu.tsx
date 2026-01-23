@@ -1,6 +1,5 @@
 import React from "react";
-import { Share2, Send, Copy, MessageCircle } from "lucide-react";
-import { FaFacebook, FaInstagram } from "react-icons/fa";
+import { FaShareAlt, FaFacebook, FaInstagram, FaWhatsapp,  FaTelegram, FaCopy } from "react-icons/fa";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,21 +15,26 @@ interface ShareMenuProps {
     title: string;
     description?: string;
   };
-}
+} 
 
 export default function Sharemenu({ service }: ShareMenuProps) {
   const [url, setUrl] = React.useState("");
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
+    if (window.location.pathname.startsWith("/services/")) {
+      // já estou dentro de /services/:id → uso a URL atual
+      setUrl(window.location.href);
+    } else if (service?.id) {
+      // estou na listagem → gero o link para o detalhe
       setUrl(`${window.location.origin}/services/${service.id}`);
     }
-  }, [service.id]);
+  }
+}, [service?.id]);
+
 
   const copyLink = async () => {
     try {
-      const url = window.location.href;
-
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         toast.success("✅ Link copiado para a área de transferência!");
@@ -50,7 +54,6 @@ export default function Sharemenu({ service }: ShareMenuProps) {
     }
   };
 
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -64,11 +67,11 @@ export default function Sharemenu({ service }: ShareMenuProps) {
           aria-label={`Compartilhar ${service.title}`}
           title="Compartilhar"
         >
-          <Share2 className="h-4 w-4" />
+          <FaShareAlt className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent side="bottom" align="end" sideOffset={4} className="w-48">
         {/* Facebook */}
         <DropdownMenuItem asChild>
           <a
@@ -91,7 +94,7 @@ export default function Sharemenu({ service }: ShareMenuProps) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
-            <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+            <FaWhatsapp className="mr-2 h-4 w-4 text-green-500" />  WhatsApp
           </a>
         </DropdownMenuItem>
 
@@ -105,7 +108,7 @@ export default function Sharemenu({ service }: ShareMenuProps) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
-            <Send className="mr-2 h-4 w-4" /> Telegram
+            <FaTelegram className="mr-2 h-4 w-4 text-sky-500" /> Telegram
           </a>
         </DropdownMenuItem>
 
@@ -128,7 +131,7 @@ export default function Sharemenu({ service }: ShareMenuProps) {
             copyLink();
           }}
         >
-          <Copy className="mr-2 h-4 w-4" /> Copiar link
+          <FaCopy className="mr-2 h-4 w-4" /> Copiar link
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
